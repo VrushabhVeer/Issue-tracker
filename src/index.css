@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Barlow", sans-serif;
+  }
+}
+
+.form-field-appear {
+  animation: formFieldAppear 0.3s ease-out forwards;
+}
+
+@keyframes formFieldAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.image-zoom-effect:hover .auth-image {
+  transform: scale(1.05);
+}
