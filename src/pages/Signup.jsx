@@ -1,38 +1,47 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { registerUser } from "../apiCalls/UserApis";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Link, useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullname: "",
+    name: "",
     email: "",
     password: "",
+    company_id:"",
     role: "",
   });
 
   const [errors, setErrors] = useState({
-    fullname: "",
+    name: "",
     email: "",
     password: "",
+    company_id:"",
     role: "",
   });
 
   const validateForm = () => {
     let valid = true;
     const newErrors = {
-      fullname: "",
+      name: "",
       email: "",
       password: "",
+      company_id:"",
       role: "",
     };
 
-    // Fullname validation
-    if (!formData.fullname.trim()) {
-      newErrors.fullname = "Fullname is required";
+    // name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "name is required";
       valid = false;
-    } else if (formData.fullname.trim().length < 3) {
-      newErrors.fullname = "Fullname must be at least 3 characters";
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "name must be at least 3 characters";
       valid = false;
     }
 
@@ -54,6 +63,12 @@ const Signup = () => {
       valid = false;
     }
 
+    // conpany validation
+    if (!formData.company_id.trim()) {
+      newErrors.company_id = "company_id is required";
+      valid = false;
+    }
+
     // Role validation
     if (!formData.role) {
       newErrors.role = "Please select a role";
@@ -72,15 +87,90 @@ const Signup = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (validateForm()) {
-      console.log("formdata---------", formData);
+      setIsSubmitting(true);
+      try {
+        const userData = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          company_code: formData.company_id,
+          role: formData.role,
+        };
+
+        const response = await registerUser(userData);
+        console.log(response);
+        
+        if (response.error) {
+          // Show error toast
+          toast.error(response.error, {
+            position: "top-center",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+        }
+        else if(response.user){
+          toast.success('Registration successful!', {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            onClose: () => navigate('/login')
+          });
+        } else {
+          // Show success toast
+          toast.error('Failed to Register', {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+          // Optionally redirect after successful registration
+          // navigate('/login');
+        }
+      } catch (error) {
+        console.error("Registration error:", error);
+        toast.error(error.message || "Registration failed. Please try again.", {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+     <ToastContainer
+        position="top-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="max-w-md mx-auto w-full bg-white overflow-hidden p-6 rounded-lg">
         <div className="mb-6 text-center">
           <h1 className="font-bebasNeue tracking-wider text-3xl font-bold text-gray-800">
@@ -98,22 +188,22 @@ const Signup = () => {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-4 form-field-appear">
-            <label htmlFor="fullname" className="font-medium">
-              Fullname <span className="text-red-500">*</span>
+            <label htmlFor="name" className="font-medium">
+              Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              id="fullname"
-              name="fullname"
-              value={formData.fullname}
+              id="name"
+              name="name"
+              value={formData.name}
               onChange={handleChange}
               placeholder="John Doe"
               className={`w-full py-2 px-4 border ${
-                errors.fullname ? "border-red-500" : "border-gray-300"
+                errors.name ? "border-red-500" : "border-gray-300"
               } rounded-lg mt-1`}
             />
-            {errors.fullname && (
-              <p className="text-red-500 text-sm mb-3">{errors.fullname}</p>
+            {errors.name && (
+              <p className="text-red-500 text-sm mb-3">{errors.name}</p>
             )}
           </div>
 
@@ -170,6 +260,26 @@ const Signup = () => {
             )}
           </div>
 
+          <div className="mb-4 form-field-appear">
+            <label htmlFor="company_id" className="font-medium">
+              Company Code <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="company_id"
+              name="company_id"
+              value={formData.company_id}
+              onChange={handleChange}
+              placeholder="company_id code"
+              className={`w-full py-2 px-4 border ${
+                errors.company_id ? "border-red-500" : "border-gray-300"
+              } rounded-lg mt-1`}
+            />
+            {errors.company_id && (
+              <p className="text-red-500 text-sm mb-3">{errors.company_id}</p>
+            )}
+          </div>
+
           <div className="mb-3 form-field-appear">
             <label htmlFor="role" className="font-medium">
               Role <span className="text-red-500">*</span>
@@ -185,7 +295,9 @@ const Signup = () => {
             >
               <option value="">Select Role</option>
               <option value="developer">Developer</option>
-              <option value="organization">Organization</option>
+              <option value="tester">Tester</option>
+              <option value="manager">Manager</option>
+              <option value="admin">Admin</option>
             </select>
             {errors.role && (
               <p className="text-red-500 text-sm mb-3">{errors.role}</p>
@@ -210,12 +322,25 @@ const Signup = () => {
             .
           </p>
 
-          <button
+          {/* <button
             type="submit"
             className="form-field-appear w-full bg-[#01a370] hover:bg-[#018a60] text-white py-3 rounded-lg font-medium transition duration-200"
           >
             Create Account
-          </button>
+          </button> */}
+          <button
+  type="submit"
+  disabled={isSubmitting}
+  className={`form-field-appear w-full bg-[#01a370] hover:bg-[#018a60] text-white py-3 rounded-lg font-medium transition duration-200 ${
+    isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+  }`}
+>
+  {isSubmitting ? "Creating Account..." : "Create Account"}
+</button>
+
+{submitError && (
+  <p className="text-red-500 text-sm mt-3 text-center">{submitError}</p>
+)}
         </form>
       </div>
     </div>
