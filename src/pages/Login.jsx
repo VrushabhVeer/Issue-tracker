@@ -1,9 +1,18 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from 'react-toastify';
+import { Link, useNavigate } from "react-router-dom";
+import { validateEmail, validateRequired } from "../utils/validators";
+import { AuthAPI } from "../api/index";
+import FormInput from "../common/FormInput";
+import ToastNotification from "../common/ToastNotification";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -15,48 +24,57 @@ const Login = () => {
   });
 
   const validateForm = () => {
-    let valid = true;
     const newErrors = {
-      email: "",
-      password: "",
+      email: validateEmail(formData.email),
+      password: validateRequired(formData.password, "Password"),
     };
 
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-      valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-      valid = false;
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-      valid = false;
-    }
-
     setErrors(newErrors);
-    return valid;
+    return Object.values(newErrors).every(error => error === "");
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log("formadtata---", formData);
+    
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await AuthAPI.loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.user) {
+        toast.success('Login successful!', {
+          onClose: () => navigate('/dashboard')
+        });
+      } else {
+        toast.error('Failed to login');
+      }
+    } catch (error) {
+      console.error("Login error:", error);;
+      toast.error(error.error_type || "Login failed");
+      setSubmitError(error.error_message || "Login failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <ToastNotification />
+      
       <div className="max-w-md mx-auto w-full bg-white overflow-hidden p-6 rounded-lg">
         <div className="mb-6 text-center">
           <h1 className="font-bebasNeue tracking-wider text-3xl font-bold text-gray-800">
@@ -64,67 +82,45 @@ const Login = () => {
           </h1>
           <p className="text-sm text-gray-600">
             Don't have an account?{" "}
-            <Link
-              to="/signup"
-              className="text-blue-600 font-medium hover:underline"
-            >
+            <Link to="/signup" className="text-blue-600 font-medium hover:underline">
               Sign up
             </Link>
           </p>
         </div>
+        
         <form onSubmit={handleSubmit}>
-          <div className="mb-4 form-field-appear">
-            <label htmlFor="email" className="font-medium">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="johndoe@email.com"
-              className={`w-full py-2 px-4 border mt-1 ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              } rounded-lg mb-1`}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mb-3">{errors.email}</p>
-            )}
-          </div>
+          <FormInput
+            type="email"
+            label="Email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="johndoe@email.com"
+            error={errors.email}
+            required
+          />
 
-          <div className="mb-4 form-field-appear relative">
-            <label htmlFor="password" className="font-medium">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="• • • • • • •"
-                className={`w-full py-2 px-4 pr-10 border ${
-                  errors.password ? "border-red-500" : "border-gray-300"
-                } rounded-lg mt-1`}
-              />
+          <FormInput
+            type={showPassword ? "text" : "password"}
+            label="Password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="•••••••"
+            error={errors.password}
+            required
+            icon={
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 flex items-center pr-3 mt-1"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? (
-                  <EyeOff className="text-gray-500" />
-                ) : (
-                  <Eye className="text-gray-500" />
-                )}
+                {showPassword ? <EyeOff className="text-gray-500" /> : <Eye className="text-gray-500" />}
               </button>
-            </div>
-            {errors.password && (
-              <p className="text-red-500 text-sm mb-3">{errors.password}</p>
-            )}
-          </div>
+            }
+          />
 
           <div className="flex justify-end mb-6">
             <Link
@@ -137,10 +133,17 @@ const Login = () => {
 
           <button
             type="submit"
-            className="form-field-appear w-full bg-[#01a370] hover:bg-[#018a60] text-white py-3 rounded-lg font-medium transition duration-200"
+            disabled={isSubmitting}
+            className={`w-full bg-[#01a370] hover:bg-[#018a60] text-white py-3 rounded-lg font-medium transition duration-200 ${
+              isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+            }`}
           >
-            Sign in
+            {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
+
+          {submitError && (
+            <p className="text-red-500 text-sm mt-3 text-center">{submitError}</p>
+          )}
         </form>
       </div>
     </div>

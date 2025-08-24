@@ -6,7 +6,7 @@ function App() {
   return (
     <>
       <Navbar />
-      <AppRoutes />
+        <AppRoutes />
       <Footer />
     </>
   );
