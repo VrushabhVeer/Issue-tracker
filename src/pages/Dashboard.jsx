@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   BarChart3, 
   Calendar, 
@@ -29,7 +29,7 @@ const Dashboard = () => {
     resolvedIssues: 28,
     teamMembers: 8
   });
-
+    const navigate = useNavigate();
   // Sample data for recent issues
   const [recentIssues, setRecentIssues] = useState([
     { id: 1, title: 'Login page not responsive', project: 'Website Redesign', priority: 'high', status: 'open', assignee: 'Sarah Johnson', date: '2023-06-15' },
@@ -115,8 +115,8 @@ const Dashboard = () => {
               </h1>
             </div>
             <div className="mt-4 flex md:mt-0 md:ml-4">
-              <Button variant="primary" icon={Plus}>
-                New Issue
+              <Button variant="primary" icon={Plus} onClick={() => navigate("/issues/new")}>
+                New Issue 
               </Button>
             </div>
           </div>

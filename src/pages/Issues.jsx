@@ -274,8 +274,7 @@ const IssuesPage = () => {
                 Export
               </Button>
               <Button
-                as={Link}
-                to="/issues/new"
+                onClick={() => navigate("/issues/new")}
                 variant="primary"
                 icon={Plus}
               >
@@ -486,10 +485,11 @@ const IssuesPage = () => {
                         description="Try adjusting your search or filter to find what you're looking for."
                         action={
                           <Button
-                            as={Link}
-                            to="/issues/new"
+                            // as={Link}
+                            // to="/issues/new"
                             variant="primary"
                             icon={Plus}
+                            onClick={() => navigate("/issues/new")}
                           >
                             Create New Issue
                           </Button>
