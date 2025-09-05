@@ -56,6 +56,9 @@ const Login = () => {
       if (response.error) {
         toast.error(response.error);
       } else if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('company_id', response.user.company_id);
         toast.success('Login successful!', {
           onClose: () => navigate('/dashboard')
         });

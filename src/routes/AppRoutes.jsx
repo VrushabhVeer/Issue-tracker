@@ -5,8 +5,10 @@ import Signup from "../pages/Signup";
 import IssuesPage from "../pages/Issues";
 import IssueDetails from "../pages/IssueDetails";
 import CreateIssue from "../pages/CreateIssue";
+import ProjectList from "../pages/projects/ProjectList";
 
 const AppRoutes = () => {
+    const company_id = localStorage.getItem("company_id")
     return (
         <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -16,6 +18,7 @@ const AppRoutes = () => {
             <Route path="/issues" element={<IssuesPage/>} />
             <Route path="/issues/details" element={<IssueDetails/>} />
             <Route path="/issues/new" element={<CreateIssue />} />
+            <Route path="/projects" element={<ProjectList companyId={company_id} />} />
         </Routes>
     );
 };
