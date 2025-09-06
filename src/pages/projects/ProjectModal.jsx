@@ -7,7 +7,8 @@ import Input from '../../common/Input';
 import TextArea from '../../common/TextArea';
 import Select from '../../common/Select';
 import UserSelect from '../projects/UserSelect';
-import { AuthAPI } from '../../api/index';
+import { toast } from 'react-toastify';
+import { AuthAPI, ProjectApis } from '../../api/index';
 import ToastNotification from '../../common/ToastNotification';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -61,7 +62,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
                           'Failed to load team members. Please try again.';
       
       setUsersError(errorMessage);
-      ToastNotification.error(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUsersLoading(false);
     }
@@ -111,34 +112,68 @@ const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) return;
 
-    setLoading(true);
-    try {
-      // Convert categories string to array
-      const categoriesArray = formData.categories
-        ? formData.categories.split(',').map(cat => cat.trim()).filter(cat => cat)
-        : [];
-      
-      await onSubmit({
-        ...formData,
-        categories: categoriesArray
-      });
-      onClose();
-    } catch (error) {
-      console.error('Error saving project:', error);
-      const errorMessage = error.message?.error_message || 
-                          error.error_message || 
-                          'Failed to save project. Please try again.';
-      
-      ToastNotification.error(errorMessage);
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    // Convert categories string to array
+    const categoriesArray = formData.categories
+      ? formData.categories.split(',').map(cat => cat.trim()).filter(cat => cat)
+      : [];
+
+    // Prepare the project data
+    const projectData = {
+      name: formData.name.trim(),
+      key: formData.key.trim().toUpperCase(),
+      description: formData.description.trim(),
+      categories: categoriesArray,
+      project_lead: formData.project_lead,
+      team_members: formData.team_members,
+      start_date: formData.start_date,
+      end_date: formData.end_date || null,
+      status: formData.status
+    };
+    
+    let response;
+    if (project) {
+      // Update existing project
+      // response = await ProjectApis.updateProject(project._id, projectData);
+      toast.success('Project updated successfully!');
+    } else {
+      // Create new project
+      response = await ProjectApis.createProject(projectData);
+      console.log(response)
+      toast.success('Project created successfully!');
     }
-  };
+
+    // Call the parent onSubmit callback
+    onSubmit(response);
+    onClose();
+  } catch (error) {
+    console.error('Error saving project:', error);
+    
+    // Handle validation errors from backend
+    if (error.errors) {
+      const backendErrors = {};
+      Object.keys(error.errors).forEach(key => {
+        backendErrors[key] = error.errors[key].message;
+      });
+      setErrors(backendErrors);
+    }
+
+    const errorMessage = error.message?.error_message || 
+                        error.error_message || 
+                        error.error ||
+                        'Failed to save project. Please try again.';
+    console.log("errorMessage",errorMessage)
+    toast.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleTeamMembersChange = (selectedUserIds) => {
     setFormData(prev => ({
@@ -221,7 +256,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
           />
           
           {/* Suggested categories for better UX */}
-          <div className="mt-2">
+          {/* <div className="mt-2">
             <p className="text-sm text-gray-500 mb-1">Suggested categories:</p>
             <div className="flex flex-wrap gap-2">
               {suggestedCategories.map((category, index) => (
@@ -241,7 +276,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
