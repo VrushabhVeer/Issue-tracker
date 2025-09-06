@@ -20,7 +20,7 @@ const Select = ({
       )}
       <select
         className={`
-          block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md focus:outline-none focus:ring-[#01a370] focus:border-[#01a370]
+          block w-full pl-3 pr-10 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-[#01a370] focus:border-[#01a370]
           ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
           sm:text-sm
           ${className}

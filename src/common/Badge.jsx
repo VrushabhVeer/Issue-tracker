@@ -18,12 +18,6 @@ const Badge = ({
     primary: 'bg-blue-100 text-blue-800',
     info:'bg-purple-100 text-purple-800'
   };
-//  const classes = {
-//       bug: 'bg-red-100 text-red-800',
-//       task: 'bg-blue-100 text-blue-800',
-//       story: 'bg-green-100 text-green-800',
-//       epic: 'bg-purple-100 text-purple-800'
-//     };
   const sizes = {
     small: 'text-xs px-2 py-0.5',
     medium: 'text-sm px-2.5 py-0.5',

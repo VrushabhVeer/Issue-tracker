@@ -30,7 +30,16 @@ const AuthAPI = {
     }
   },
   
-  // ... other auth endpoints
+  // Get all company members
+  getAllCompanyMembers: async (companyId) => {
+    try {
+      const response = await axiosInstance.get(`/auth/company/${companyId}`);
+      return response.data;
+    } catch (error) {
+      console.error('getAllCompanyMembers error:', error);
+      throw error.response?.data || error;
+    }
+  }
 };
 
 export default AuthAPI;

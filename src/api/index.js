@@ -1,5 +1,5 @@
 // src/api/index.js
 import AuthAPI from './endpoints/authEndpoints';
-// Import other API groups as needed
+import ProjectApis from './endpoints/projectEndpoints';
 
-export { AuthAPI };
+export { AuthAPI, ProjectApis };

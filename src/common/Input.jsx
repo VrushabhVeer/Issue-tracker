@@ -26,7 +26,7 @@ const Input = ({
         )}
         <input
           className={`
-            block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#01a370] focus:border-[#01a370]
+            block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#01a370] focus:border-[#01a370]
             ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
             ${Icon ? 'pl-10' : 'pl-3'}
             pr-3 py-2 text-sm
