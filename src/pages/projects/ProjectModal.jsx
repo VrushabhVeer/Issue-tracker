@@ -49,7 +49,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
     try {
       const response = await AuthAPI.getAllCompanyMembers(companyId);
       if (response.error) {
-        setUsersError(response.error || 'Failed to fetch team members');
+        // setUsersError(response.error || 'Failed to fetch team members');
         console.error('Failed to fetch members:', response.error);
       } else {
         setCompanyUsers(response.users || []);
@@ -62,7 +62,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
                           'Failed to load team members. Please try again.';
       
       setUsersError(errorMessage);
-      toast.error(errorMessage);
+      // toast.error(errorMessage);
     } finally {
       setUsersLoading(false);
     }
@@ -111,6 +111,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -137,20 +138,27 @@ const handleSubmit = async (e) => {
       status: formData.status
     };
     
+    console.log('Sending project data:', projectData);
+    
     let response;
     if (project) {
       // Update existing project
-      // response = await ProjectApis.updateProject(project._id, projectData);
+      response = await ProjectApis.updateProject(project._id, projectData);
+      console.log('Update response:', response);
       toast.success('Project updated successfully!');
     } else {
       // Create new project
       response = await ProjectApis.createProject(projectData);
-      console.log(response)
+      console.log('Create response:', response);
       toast.success('Project created successfully!');
     }
-
+    
     // Call the parent onSubmit callback
-    onSubmit(response);
+    const projectResult = response.project || response.data || response;
+    console.log('Passing to onSubmit:', projectResult);
+    
+    onSubmit(projectResult);
+    
     onClose();
   } catch (error) {
     console.error('Error saving project:', error);
@@ -168,8 +176,10 @@ const handleSubmit = async (e) => {
                         error.error_message || 
                         error.error ||
                         'Failed to save project. Please try again.';
-    console.log("errorMessage",errorMessage)
     toast.error(errorMessage);
+    
+    // Re-throw the error so the parent component can handle it if needed
+    throw error;
   } finally {
     setLoading(false);
   }

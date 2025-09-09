@@ -14,15 +14,15 @@ import {
 import { toast } from "react-toastify";
 
 // Import reusable components
-import Button from "../common/Button";
-import Input from "../common/Input";
-import TextArea from "../common/TextArea";
-import Select from "../common/Select";
-import Card from "../common/Card";
-import LoadingSpinner from "../common/LoadingSpinner";
-import Badge from "../common/Badge";
-import EmptyState from "../common/EmptyState";
-import Modal from "../common/Modal";
+import Button from "../../common/Button";
+import Input from "../../common/Input";
+import TextArea from "../../common/TextArea";
+import Select from "../../common/Select";
+import Card from "../../common/Card";
+import LoadingSpinner from "../../common/LoadingSpinner";
+import Badge from "../../common/Badge";
+import EmptyState from "../../common/EmptyState";
+import Modal from "../../common/Modal";
 
 const CreateIssue = () => {
   const navigate = useNavigate();

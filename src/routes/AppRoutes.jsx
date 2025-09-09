@@ -2,10 +2,10 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
-import IssuesPage from "../pages/Issues";
-import IssueDetails from "../pages/IssueDetails";
-import CreateIssue from "../pages/CreateIssue";
 import ProjectList from "../pages/projects/ProjectList";
+import IssuesPage from "../pages/issues/Issues";
+import IssueDetails from "../pages/issues/IssueDetails";
+import CreateIssue from "../pages/issues/CreateIssue";
 
 const AppRoutes = () => {
     const company_id = localStorage.getItem("company_id")
