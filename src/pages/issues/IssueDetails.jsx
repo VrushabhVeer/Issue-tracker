@@ -18,15 +18,15 @@ import {
 } from "lucide-react";
 
 // Import reusable components
-import Button from '../common/Button';
-import Input from '../common/Input';
-import TextArea from '../common/TextArea';
-import Select from '../common/Select';
-import Card from '../common/Card';
-import Badge from '../common/Badge';
-import LoadingSpinner from '../common/LoadingSpinner';
-import UserAvatar from '../common/UserAvatar';
-import EmptyState from '../common/EmptyState';
+import Button from '../../common/Button';
+import Input from '../../common/Input';
+import TextArea from '../../common/TextArea';
+import Select from '../../common/Select';
+import Card from '../../common/Card';
+import Badge from '../../common/Badge';
+import LoadingSpinner from '../../common/LoadingSpinner';
+import UserAvatar from '../../common/UserAvatar';
+import EmptyState from '../../common/EmptyState';
 
 const IssueDetails = () => {
   const { id } = useParams();

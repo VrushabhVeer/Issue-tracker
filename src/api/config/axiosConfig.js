@@ -3,7 +3,7 @@ import { setupInterceptors } from './interceptors';
 
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:4500',
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -1,7 +1,6 @@
 // components/projects/ProjectList.jsx
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Link, useNavigate } from "react-router-dom";
+import { Plus, Search, Filter, MoreVertical, ChevronLeft, ChevronRight, Trash2, AlertTriangle } from 'lucide-react';
 import Card from '../../common/Card';
 import Button from '../../common/Button';
 import Input from '../../common/Input';
@@ -12,6 +11,9 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import ProjectModal from '../projects/ProjectModal';
 import { ProjectApis } from '../../api';
 import { formatAvatar } from '../../utils/helper';
+import { toast } from 'react-toastify';
+import Modal from '../../common/Modal';
+import ToastNotification from '../../common/ToastNotification';
 
 const getStatusVariant = (status) => {
   switch (status) {
@@ -30,7 +32,9 @@ const ProjectList = ({ companyId }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  const navigate = useNavigate();
+  const [processing, setProcessing] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -65,25 +69,24 @@ const ProjectList = ({ companyId }) => {
       }
       
       const response = await ProjectApis.getProjects(params);
-      console.log(response)
+      
       // Process avatars for all users in the response
-    const processedProjects = response.docs.map(project => ({
-      ...project,
-      project_lead: project.project_lead ? {
-        ...project.project_lead,
-        avatar: formatAvatar(project.project_lead.avatar)
-      } : null,
-      team_members: project.team_members?.map(member => ({
-        ...member,
-        avatar: formatAvatar(member.avatar)
-      })) || [],
-      created_by: project.created_by ? {
-        ...project.created_by,
-        avatar: formatAvatar(project.created_by.avatar)
-      } : null
-    }));
-    
-    setProjects(processedProjects || []);
+      const processedProjects = response.docs.map(project => ({
+        ...project,
+        project_lead: project.project_lead ? {
+          ...project.project_lead,
+          avatar: formatAvatar(project.project_lead.avatar)
+        } : null,
+        team_members: project.team_members?.map(member => ({
+          ...member,
+          avatar: formatAvatar(member.avatar)
+        })) || [],
+        created_by: project.created_by ? {
+          ...project.created_by,
+        } : null
+      }));
+      
+      setProjects(processedProjects || []);
       setPagination(prev => ({
         ...prev,
         totalPages: response.totalPages,
@@ -93,6 +96,7 @@ const ProjectList = ({ companyId }) => {
       }));
     } catch (error) {
       console.error('Error fetching projects:', error);
+      toast.error(error.message?.error_message || 'Failed to fetch projects');
       setProjects([]);
     } finally {
       setLoading(false);
@@ -115,35 +119,45 @@ const ProjectList = ({ companyId }) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  const handleCreateProject = async (projectData) => {
-    try {
-      // API call to create project would go here
-      // After successful creation, refetch projects
-      await fetchProjects();
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error('Error creating project:', error);
-    }
+  const handleCreateSuccess = (projectData) => {
+    toast.success('Project created successfully');
+    fetchProjects();
+    setShowCreateModal(false);
   };
 
-  const handleUpdateProject = async (projectData) => {
-    try {
-      // API call to update project would go here
-      // After successful update, refetch projects
-      await fetchProjects();
-      setEditingProject(null);
-    } catch (error) {
-      console.error('Error updating project:', error);
-    }
+  const handleUpdateSuccess = (projectData) => {
+    toast.success('Project updated successfully');
+    fetchProjects();
+    setEditingProject(null);
   };
 
-  const handleDeleteProject = async (projectId) => {
+  const handleDeleteClick = (project) => {
+    setProjectToDelete(project);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+    
     try {
-      // API call to delete project would go here
-      // After successful deletion, refetch projects
+      setProcessing(true);
+      const response = await ProjectApis.deleteProject(projectToDelete._id);
+      console.log("res",response)
+      if(response.success){
+        toast.success(response?.message?.success_message || 'Project deleted successfully');
+      }else{
+        console.log("hello")
+        console.log(response);
+        toast.error(response||"Failed to delete project");
+      }
+      setShowDeleteModal(false);
+      setProjectToDelete(null);
       await fetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
+      toast.error(error.error_message || 'Failed to delete project');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -158,6 +172,7 @@ const ProjectList = ({ companyId }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
+      <ToastNotification />
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="md:flex md:items-center md:justify-between">
@@ -174,6 +189,7 @@ const ProjectList = ({ companyId }) => {
                 onClick={() => setShowCreateModal(true)}
                 variant="primary"
                 icon={Plus}
+                disabled={processing}
               >
                 New Project
               </Button>
@@ -203,7 +219,7 @@ const ProjectList = ({ companyId }) => {
                 onChange={handleStatusFilterChange}
               >
                 <option value="all">All Statuses</option>
-                <option value="active">Active</option>
+                <option value='active'>Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="completed">Completed</option>
                 <option value="archived">Archived</option>
@@ -219,7 +235,10 @@ const ProjectList = ({ companyId }) => {
                   : "Try adjusting your search or filter criteria."}
                 action={
                   pagination.totalDocs === 0 && (
-                    <Button onClick={() => setShowCreateModal(true)}>
+                    <Button 
+                      onClick={() => setShowCreateModal(true)}
+                      disabled={processing}
+                    >
                       Create Project
                     </Button>
                   )
@@ -233,7 +252,8 @@ const ProjectList = ({ companyId }) => {
                       key={project._id}
                       project={project}
                       onEdit={() => setEditingProject(project)}
-                      onDelete={() => handleDeleteProject(project._id)}
+                      onDelete={() => handleDeleteClick(project)}
+                      processing={processing}
                     />
                   ))}
                 </div>
@@ -254,7 +274,7 @@ const ProjectList = ({ companyId }) => {
                         variant="outline"
                         size="small"
                         icon={ChevronLeft}
-                        disabled={!pagination.hasPrevPage}
+                        disabled={!pagination.hasPrevPage || processing}
                         onClick={() => handlePageChange(pagination.page - 1)}
                       >
                         Previous
@@ -280,6 +300,7 @@ const ProjectList = ({ companyId }) => {
                               size="small"
                               onClick={() => handlePageChange(pageNum)}
                               className="min-w-[2.5rem]"
+                              disabled={processing}
                             >
                               {pageNum}
                             </Button>
@@ -292,7 +313,7 @@ const ProjectList = ({ companyId }) => {
                         size="small"
                         icon={ChevronRight}
                         iconPosition="right"
-                        disabled={!pagination.hasNextPage}
+                        disabled={!pagination.hasNextPage || processing}
                         onClick={() => handlePageChange(pagination.page + 1)}
                       >
                         Next
@@ -309,7 +330,7 @@ const ProjectList = ({ companyId }) => {
           <ProjectModal
             isOpen={showCreateModal}
             onClose={() => setShowCreateModal(false)}
-            onSubmit={handleCreateProject}
+            onSubmit={handleCreateSuccess}
             companyId={companyId}
           />
         )}
@@ -318,19 +339,62 @@ const ProjectList = ({ companyId }) => {
           <ProjectModal
             isOpen={!!editingProject}
             onClose={() => setEditingProject(null)}
-            onSubmit={handleUpdateProject}
+            onSubmit={handleUpdateSuccess}
             project={editingProject}
             companyId={companyId}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setProjectToDelete(null);
+          }}
+          title="Delete Project"
+          size="medium"
+        >
+          <div className="flex flex-col items-center py-6">
+            <div className="bg-red-100 p-3 rounded-full mb-4">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Project</h3>
+            <p className="text-gray-600 text-center mb-6">
+              Are you sure you want to delete <strong>{projectToDelete?.name}</strong>? 
+              This action cannot be undone and all project data will be permanently removed.
+            </p>
+            <div className="flex space-x-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setProjectToDelete(null);
+                }}
+                className="flex-1"
+                disabled={processing}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteProject}
+                className="flex-1"
+                loading={processing}
+                icon={Trash2}
+              >
+                Delete Project
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </main>
     </div>
   );
 };
 
-const ProjectCard = ({ project, onEdit, onDelete }) => {
+const ProjectCard = ({ project, onEdit, onDelete, processing }) => {
   const [showMenu, setShowMenu] = useState(false);
-  const navigate = useNavigate();
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
@@ -347,7 +411,7 @@ const ProjectCard = ({ project, onEdit, onDelete }) => {
             </Badge>
           </h3>
           {project.description && (
-            <p className="text-gray-600 text-sm mt-1">{project.description}</p>
+            <p className="text-gray-600 text-sm mt-1 line-clamp-2">{project.description}</p>
           )}
         </div>
         
@@ -357,27 +421,28 @@ const ProjectCard = ({ project, onEdit, onDelete }) => {
             size="small"
             icon={MoreVertical}
             onClick={() => setShowMenu(!showMenu)}
+            disabled={processing}
           />
           
           {showMenu && (
             <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
               <button
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                 onClick={() => {
                   onEdit();
                   setShowMenu(false);
                 }}
+                disabled={processing}
               >
                 Edit Project
               </button>
               <button
-                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 disabled:opacity-50"
                 onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this project?')) {
-                    onDelete();
-                  }
+                  onDelete();
                   setShowMenu(false);
                 }}
+                disabled={processing}
               >
                 Delete Project
               </button>
