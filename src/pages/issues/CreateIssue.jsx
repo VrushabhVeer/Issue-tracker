@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -10,6 +10,8 @@ import {
   Tag,
   Paperclip,
   ListTodo,
+  Building2,
+  User
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -23,11 +25,16 @@ import LoadingSpinner from "../../common/LoadingSpinner";
 import Badge from "../../common/Badge";
 import EmptyState from "../../common/EmptyState";
 import Modal from "../../common/Modal";
+import UserSelect from "../../common/UserSelect";
+import { AuthAPI, ProjectApis } from "../../api";
+import ProjectSelect from "../../common/ProjectSelect";
 
-const CreateIssue = () => {
+const CreateIssue = ({companyId}) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  // const [attachments, setAttachments] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [companyUsers, setCompanyUsers] = useState([]);
   const [subtasks, setSubtasks] = useState([]);
   const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
   const [editingSubtask, setEditingSubtask] = useState(null);
@@ -59,13 +66,8 @@ const CreateIssue = () => {
     is_blocked: false,
     blocked_reason: "",
   });
-
-  // Sample data - in real app, you'd fetch these from your API
-  const projects = [
-    { _id: "1", name: "Website Redesign", key: "WEB" },
-    { _id: "2", name: "Mobile App", key: "MOB" },
-    { _id: "3", name: "API Services", key: "API" },
-  ];
+  const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
   const sprints = [
     { _id: "1", name: "Sprint 1 - Jan 2023" },
@@ -73,19 +75,74 @@ const CreateIssue = () => {
     { _id: "3", name: "Sprint 3 - Mar 2023" },
   ];
 
-  const users = [
-    { _id: "1", name: "Sarah Johnson", avatar: null },
-    { _id: "2", name: "Michael Chen", avatar: null },
-    { _id: "3", name: "Emma Davis", avatar: null },
-    { _id: "4", name: "Alex Rodriguez", avatar: null },
-    { _id: "5", name: "You", avatar: null },
-  ];
+  // Fetch users from API
+  useEffect(() => {
+    fetchUsers();
+    fetchProjectsSimple();
+  }, []);
+
+  const fetchProjectsSimple = async () => {
+  try {
+    setLoadingProjects(true);
+    const response = await ProjectApis.getProjectNames();
+    setProjects(response || []);
+  } catch (error) {
+    console.error('Error fetching projects list:', error);
+    toast.error(error.message?.error_message || 
+                          error.error_message || 'Failed to fetch projects');
+  } finally {
+    setLoadingProjects(false);
+  }
+};
+
+  const fetchUsers = async () => {
+    if (!companyId) {
+      setUsersError('Company ID is required');
+      return;
+    }
+    setUsersLoading(true);
+    setUsersError('');
+    try {
+      const response = await AuthAPI.getAllCompanyMembers(companyId);
+      if (response.error) {
+        // setUsersError(response.error || 'Failed to fetch team members');
+        console.error('Failed to fetch members:', response.error);
+      } else {
+        setCompanyUsers(response.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching company members:', error);
+      
+      const errorMessage = error.message?.error_message || 
+                          error.error_message || 
+                          'Failed to load team members. Please try again.';
+      
+      setUsersError(errorMessage);
+      // toast.error(errorMessage);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleAssigneeChange = (assigneeId) => {
+    setFormData(prev => ({
+      ...prev,
+      assignee_id: assigneeId
+    }));
+  };
+
+  const handleReporterChange = (reporterId) => {
+    setFormData(prev => ({
+      ...prev,
+      reporter_id: reporterId
     }));
   };
 
@@ -100,6 +157,20 @@ const CreateIssue = () => {
       setNewSubtask((prev) => ({
         ...prev,
         [name]: value,
+      }));
+    }
+  };
+
+  const handleSubtaskAssigneeChange = (assigneeId) => {
+    if (editingSubtask) {
+      setEditingSubtask((prev) => ({
+        ...prev,
+        assignee_id: assigneeId
+      }));
+    } else {
+      setNewSubtask((prev) => ({
+        ...prev,
+        assignee_id: assigneeId
       }));
     }
   };
@@ -178,39 +249,6 @@ const CreateIssue = () => {
     setLabels((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // const handleFileUpload = (e) => {
-  //   const files = Array.from(e.target.files);
-  //   const validFiles = files.filter(file => {
-  //     const validTypes = [
-  //       'image/jpeg',
-  //       'image/png',
-  //       'application/pdf',
-  //       'application/msword',
-  //       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  //       'application/vnd.ms-excel',
-  //       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  //     ];
-
-  //     if (!validTypes.includes(file.type)) {
-  //       toast.error(`Invalid file type: ${file.name}`);
-  //       return false;
-  //     }
-
-  //     if (file.size > 10 * 1024 * 1024) {
-  //       toast.error(`File too large: ${file.name} (max 10MB)`);
-  //       return false;
-  //     }
-
-  //     return true;
-  //   });
-
-  //   setAttachments(prev => [...prev, ...validFiles]);
-  // };
-
-  // const removeAttachment = (index) => {
-  //   setAttachments(prev => prev.filter((_, i) => i !== index));
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -221,7 +259,7 @@ const CreateIssue = () => {
         labels,
         subtasks: subtasks.map(({ id, ...subtask }) => subtask),
         // In a real app, you would add the current user as reporter
-        reporter_id: "5", // Hardcoded for demo - replace with actual user ID
+        reporter_id: formData.reporter_id || "5", // Use selected reporter or default
       };
 
       // Convert empty strings to null for number fields
@@ -247,11 +285,6 @@ const CreateIssue = () => {
           }
         }
       });
-
-      // Append attachments
-      // attachments.forEach(file => {
-      //   formDataToSend.append('attachments', file);
-      // });
 
       console.log("Payload:", payload);
 
@@ -296,7 +329,7 @@ const CreateIssue = () => {
   };
 
   const getAssigneeName = (assigneeId) => {
-    const user = users.find((user) => user._id === assigneeId);
+    const user = companyUsers.find((user) => user._id === assigneeId);
     return user ? user.name : "Unassigned";
   };
 
@@ -330,20 +363,17 @@ const CreateIssue = () => {
           <form onSubmit={handleSubmit}>
             <div className="px-6 py-6 space-y-6">
               {/* Project Selection */}
-              <Select
-                label="Project"
-                name="project_id"
-                value={formData.project_id}
-                onChange={handleChange}
-                required
-                options={[
-                  { value: "", label: "Select a project" },
-                  ...projects.map((project) => ({
-                    value: project._id,
-                    label: `${project.name} (${project.key})`,
-                  })),
-                ]}
-              />
+<ProjectSelect
+  label="Project"
+  projects={projects}
+  value={formData.project_id}
+  onChange={(projectId) => setFormData(prev => ({ ...prev, project_id: projectId }))}
+  required
+  icon={Building2}
+  loading={loadingProjects}
+  disabled={loadingProjects}
+  helperText="Select the project this issue belongs to"
+/>
 
               {/* Title */}
               <Input
@@ -366,6 +396,7 @@ const CreateIssue = () => {
                 placeholder="Detailed description of the issue"
               />
 
+              {/* Type, Status, Priority */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Issue Type */}
                 <Select
@@ -413,6 +444,7 @@ const CreateIssue = () => {
                 />
               </div>
 
+              {/* Story Points, Sprint, Due Date */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Story Points */}
                 <Input
@@ -424,21 +456,6 @@ const CreateIssue = () => {
                   min="0"
                   max="20"
                   placeholder="0"
-                />
-
-                {/* Assignee */}
-                <Select
-                  label="Assignee"
-                  name="assignee_id"
-                  value={formData.assignee_id}
-                  onChange={handleChange}
-                  options={[
-                    { value: "", label: "Unassigned" },
-                    ...users.map((user) => ({
-                      value: user._id,
-                      label: user.name,
-                    })),
-                  ]}
                 />
 
                 {/* Sprint */}
@@ -455,9 +472,7 @@ const CreateIssue = () => {
                     })),
                   ]}
                 />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Due Date */}
                 <Input
                   label="Due Date"
@@ -466,6 +481,18 @@ const CreateIssue = () => {
                   value={formData.due_date}
                   onChange={handleChange}
                   icon={Calendar}
+                />
+              </div>
+
+              {/* Environment, Estimated Time, Actual Time */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Environment */}
+                <Input
+                  label="Environment"
+                  name="environment"
+                  value={formData.environment}
+                  onChange={handleChange}
+                  placeholder="e.g., Production, Development, Staging"
                 />
 
                 {/* Estimated Time */}
@@ -495,60 +522,108 @@ const CreateIssue = () => {
                 />
               </div>
 
-              {/* Environment */}
-              <Input
-                label="Environment"
-                name="environment"
-                value={formData.environment}
-                onChange={handleChange}
-                placeholder="e.g., Production, Development, Staging"
-              />
+              {/* Assignee, Reporter */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Assignee - Using UserSelect component */}
+                <div className="relative">
+                  <UserSelect
+                    label="Assignee"
+                    companyMembers={companyUsers}
+                    value={formData.assignee_id}
+                    onChange={handleAssigneeChange}
+                    icon={User}
+                    helperText="Select who will work on this issue"
+                    loading={usersLoading}
+                    disabled={usersLoading || !!usersError}
+                  />
+                  {usersLoading && (
+                    <div className="absolute right-3 top-9">
+                      <LoadingSpinner size="small" className="text-gray-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Reporter - Using UserSelect component */}
+                <div className="relative">
+                  <UserSelect
+                    label="Reporter"
+                    companyMembers={companyUsers}
+                    value={formData.reporter_id}
+                    onChange={handleReporterChange}
+                    icon={User}
+                    helperText="Select who reported this issue"
+                    loading={usersLoading}
+                    disabled={usersLoading || !!usersError}
+                  />
+                  {usersLoading && (
+                    <div className="absolute right-3 top-9">
+                      <LoadingSpinner size="small" className="text-gray-400" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {usersError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                  <div className="flex items-center">
+                    <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
+                    <span className="text-red-700 text-sm">{usersError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fetchUsers}
+                    className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
 
               {/* Labels */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Labels
-  </label>
-  <div className="flex flex-wrap gap-2 mb-2">
-    {labels.map((label, index) => (
-      <Badge
-        key={index}
-        variant="primary"
-        className="flex items-center gap-1"
-      >
-        {label}
-        <button
-          type="button"
-          onClick={() => removeLabel(index)}
-          className="ml-1 hover:text-red-500"
-        >
-          <X size={14} />
-        </button>
-      </Badge>
-    ))}
-  </div>
-  <div className="flex gap-2">
-    <Input
-      value={newLabel}
-      onChange={(e) => setNewLabel(e.target.value)}
-      placeholder="Add a label"
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          addLabel();
-        }
-      }}
-    />
-    <Button
-      type="button"
-      variant="secondary"
-      onClick={addLabel}
-      disabled={!newLabel.trim()}
-    >
-      Add
-    </Button>
-  </div>
-</div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Labels
+                </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {labels.map((label, index) => (
+                    <Badge
+                      key={index}
+                      variant="primary"
+                      className="flex items-center gap-1"
+                    >
+                      {label}
+                      <button
+                        type="button"
+                        onClick={() => removeLabel(index)}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        <X size={14} />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder="Add a label"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addLabel();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addLabel}
+                    disabled={!newLabel.trim()}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
 
               {/* Subtasks */}
               <div>
@@ -586,42 +661,42 @@ const CreateIssue = () => {
                   />
                 ) : (
                   <div className="space-y-3">
-  {subtasks.map((subtask) => (
-    <div
-      key={subtask.id}
-      className="p-4 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
-      onClick={() => openSubtaskModal(subtask)}
-    >
-      <div className="flex justify-between items-start">
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 truncate">
-            {subtask.title}
-          </h4>
-          {subtask.description && (
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-              {subtask.description}
-            </p>
-          )}
-        </div>
-        <div className="ml-4 flex flex-col items-end space-y-2">
-          <div className="flex items-center space-x-2">
-            <Badge variant={getStatusBadgeVariant(subtask.status)}>
-              {subtask.status.replace("_", " ")}
-            </Badge>
-            <span className="text-xs text-gray-500">
-              {getAssigneeName(subtask.assignee_id)}
-            </span>
-          </div>
-          {subtask.due_date && (
-            <span className="text-xs text-gray-500">
-              Due: {new Date(subtask.due_date).toLocaleDateString()}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
+                    {subtasks.map((subtask) => (
+                      <div
+                        key={subtask.id}
+                        className="p-4 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => openSubtaskModal(subtask)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 truncate">
+                              {subtask.title}
+                            </h4>
+                            {subtask.description && (
+                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                {subtask.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="ml-4 flex flex-col items-end space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={getStatusBadgeVariant(subtask.status)}>
+                                {subtask.status.replace("_", " ")}
+                              </Badge>
+                              <span className="text-xs text-gray-500">
+                                {getAssigneeName(subtask.assignee_id)}
+                              </span>
+                            </div>
+                            {subtask.due_date && (
+                              <span className="text-xs text-gray-500">
+                                Due: {new Date(subtask.due_date).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
@@ -691,23 +766,29 @@ const CreateIssue = () => {
                   { value: "closed", label: "Closed" },
                 ]}
               />
-              <Select
-                label="Assignee"
-                name="assignee_id"
-                value={
-                  editingSubtask
-                    ? editingSubtask.assignee_id
-                    : newSubtask.assignee_id
-                }
-                onChange={handleSubtaskChange}
-                options={[
-                  { value: "", label: "Unassigned" },
-                  ...users.map((user) => ({
-                    value: user._id,
-                    label: user.name,
-                  })),
-                ]}
-              />
+              
+              {/* Subtask Assignee - Using UserSelect component */}
+              <div className="relative">
+                <UserSelect
+                  label="Assignee"
+                  companyMembers={companyUsers}
+                  value={
+                    editingSubtask
+                      ? editingSubtask.assignee_id
+                      : newSubtask.assignee_id
+                  }
+                  onChange={handleSubtaskAssigneeChange}
+                  icon={User}
+                  helperText="Select who will work on this subtask"
+                  loading={usersLoading}
+                  disabled={usersLoading || !!usersError}
+                />
+                {usersLoading && (
+                  <div className="absolute right-3 top-9">
+                    <LoadingSpinner size="small" className="text-gray-400" />
+                  </div>
+                )}
+              </div>
             </div>
             <Input
               label="Due Date"

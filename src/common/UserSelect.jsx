@@ -1,8 +1,8 @@
 // components/projects/UserSelect.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, Check } from 'lucide-react';
-import Input from '../../common/Input';
-import UserAvatar from '../../common/UserAvatar';
+import Input from './Input';
+import UserAvatar from './UserAvatar';
 
 const UserSelect = ({ 
   label, 

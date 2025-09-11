@@ -24,6 +24,16 @@ const ProjectApis = {
     }
   },
 
+  getProjectNames: async () => {
+  try {
+    const response = await axiosInstance.get(`/projects/project-names`);
+    return response.data;
+  } catch (error) {
+    console.error('getProjectsSimple error:', error);
+    throw error.response?.data || error;
+  }
+},
+
   // Create project
   createProject: async (projectData) => {
     try {
