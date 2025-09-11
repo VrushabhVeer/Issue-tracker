@@ -6,11 +6,11 @@ import Button from '../../common/Button';
 import Input from '../../common/Input';
 import TextArea from '../../common/TextArea';
 import Select from '../../common/Select';
-import UserSelect from '../projects/UserSelect';
 import { toast } from 'react-toastify';
 import { AuthAPI, ProjectApis } from '../../api/index';
 import ToastNotification from '../../common/ToastNotification';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import UserSelect from '../../common/UserSelect';
 
 const ProjectModal = ({ isOpen, onClose, onSubmit, project, companyId }) => {
   const [loading, setLoading] = useState(false);
@@ -264,29 +264,6 @@ const handleSubmit = async (e) => {
             helperText="Comma-separated categories (e.g., Web Development, UI/UX Design, API)"
             placeholder="Enter categories separated by commas"
           />
-          
-          {/* Suggested categories for better UX */}
-          {/* <div className="mt-2">
-            <p className="text-sm text-gray-500 mb-1">Suggested categories:</p>
-            <div className="flex flex-wrap gap-2">
-              {suggestedCategories.map((category, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => {
-                    const currentCategories = formData.categories ? formData.categories.split(',').map(cat => cat.trim()) : [];
-                    if (!currentCategories.includes(category)) {
-                      const newCategories = [...currentCategories, category].join(', ');
-                      setFormData({ ...formData, categories: newCategories });
-                    }
-                  }}
-                  className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div> */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
