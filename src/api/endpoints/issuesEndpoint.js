@@ -18,6 +18,16 @@ const IssueApis = {
       throw error.response?.data || error;
     }
   },
+  createIssue: async (issueData) => {
+    try {
+      const response = await axiosInstance.post(`/issues`, issueData);
+      console.log('createIssue response:', response);
+      return response;
+    } catch (error) {
+      console.error('createIssue error:', error);
+      throw error.response?.data || error;
+    }
+  }
 };
 
 export default IssueApis;

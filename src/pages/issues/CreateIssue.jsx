@@ -11,7 +11,8 @@ import {
   Paperclip,
   ListTodo,
   Building2,
-  User
+  User,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -28,6 +29,7 @@ import Modal from "../../common/Modal";
 import UserSelect from "../../common/UserSelect";
 import { AuthAPI, ProjectApis } from "../../api";
 import ProjectSelect from "../../common/ProjectSelect";
+import IssueApis from "../../api/endpoints/issuesEndpoint";
 
 const CreateIssue = ({companyId}) => {
   const navigate = useNavigate();
@@ -56,8 +58,8 @@ const CreateIssue = ({companyId}) => {
     status: "open",
     story_points: "",
     priority: "medium",
-    reporter_id: "",
-    assignee_id: "",
+    reporter_id: null,
+    assignee_id:null,
     due_date: "",
     estimated_time: "",
     actual_time: "",
@@ -259,34 +261,36 @@ const CreateIssue = ({companyId}) => {
         labels,
         subtasks: subtasks.map(({ id, ...subtask }) => subtask),
         // In a real app, you would add the current user as reporter
-        reporter_id: formData.reporter_id || "5", // Use selected reporter or default
+        reporter_id: formData.reporter_id, // Use selected reporter or default
       };
 
       // Convert empty strings to null for number fields
       if (!payload.story_points) payload.story_points = null;
       if (!payload.estimated_time) payload.estimated_time = null;
       if (!payload.actual_time) payload.actual_time = null;
-
+// if (!payload.assignee_id) payload.assignee_id = null;
+// if (!payload.reporter_id) payload.reporter_id = null;
       const formDataToSend = new FormData();
 
       // Append all form fields
-      Object.keys(payload).forEach((key) => {
-        if (
-          payload[key] !== null &&
-          payload[key] !== undefined &&
-          payload[key] !== ""
-        ) {
-          if (Array.isArray(payload[key])) {
-            payload[key].forEach((item) => {
-              formDataToSend.append(key, item);
-            });
-          } else {
-            formDataToSend.append(key, payload[key]);
-          }
-        }
-      });
+      // Object.keys(payload).forEach((key) => {
+      //   if (
+      //     payload[key] !== null &&
+      //     payload[key] !== undefined &&
+      //     payload[key] !== ""
+      //   ) {
+      //     if (Array.isArray(payload[key])) {
+      //       payload[key].forEach((item) => {
+      //         formDataToSend.append(key, item);
+      //       });
+      //     } else {
+      //       formDataToSend.append(key, payload[key]);
+      //     }
+      //   }
+      // });
 
       console.log("Payload:", payload);
+      console.log("FormData entries:",formDataToSend);
 
       // Uncomment to send to your API
       /*
@@ -307,9 +311,11 @@ const CreateIssue = ({companyId}) => {
         throw new Error(data.error || 'Failed to create issue');
       }
       */
+     const response = await IssueApis.createIssue(payload);
+     console.log('Issue created:', response);
 
       toast.success("Issue created successfully!");
-      navigate("/issues");
+      // navigate("/issues");
     } catch (error) {
       toast.error(error.message);
       console.error("Error creating issue:", error);
@@ -716,6 +722,7 @@ const CreateIssue = ({companyId}) => {
                 loading={loading}
                 disabled={!formData.project_id || !formData.title}
                 icon={Plus}
+                // onClick={handleSubmit}
               >
                 Create Issue
               </Button>
