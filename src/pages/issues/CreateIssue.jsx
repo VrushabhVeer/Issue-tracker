@@ -13,6 +13,7 @@ import {
   Building2,
   User,
   AlertCircle,
+  Edit,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -314,15 +315,18 @@ const CreateIssue = ({ companyId }) => {
         subtasks: subtasks.map(({ id, ...subtask }) => subtask),
       };
 
-      // Convert empty strings to null for number fields
-      if (!payload.story_points) payload.story_points = null;
-      if (!payload.estimated_time) payload.estimated_time = null;
-      if (!payload.actual_time) payload.actual_time = null;
+      // Convert empty strings to null for number and ID fields
+      const fieldsToNullify = ['story_points', 'estimated_time', 'actual_time', 'sprint_id', 'assignee_id', 'reporter_id'];
+      fieldsToNullify.forEach(field => {
+        if (payload[field] === "" || payload[field] === undefined) {
+          payload[field] = null;
+        }
+      });
 
       if (isEditMode) {
         await IssueApis.updateIssue(editId, payload);
         toast.success("Issue updated successfully!");
-        navigate(`/issues/${editId}`);
+        navigate(`/issues/details/${editId}`);
       } else {
         await IssueApis.createIssue(payload);
         toast.success("Issue created successfully!");

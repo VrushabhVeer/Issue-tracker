@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [recentIssues, setRecentIssues] = useState([]);
   const [projects, setProjects] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -49,6 +50,7 @@ const Dashboard = () => {
           setRecentIssues(response.data.recentIssues);
           setProjects(response.data.projects);
           setActivities(response.data.activities);
+          setUpcomingDeadlines(response.data.upcomingDeadlines || []);
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
@@ -97,10 +99,37 @@ const Dashboard = () => {
   const statusBadge = (status) => {
     const variants = {
       open: 'primary',
-      'in progress': 'info',
-      resolved: 'success'
+      'in_progress': 'info',
+      resolved: 'success',
+      closed: 'default'
     };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    return <Badge variant={variants[status] || 'default'}>{status.replace('_', ' ')}</Badge>;
+  };
+
+  const getDeadlineBadge = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadline = new Date(date);
+    deadline.setHours(0, 0, 0, 0);
+
+    const diffTime = deadline - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return <Badge variant="danger">Today</Badge>;
+    if (diffDays === 1) return <Badge variant="danger">Tomorrow</Badge>;
+    if (diffDays < 7) return <Badge variant="warning">In {diffDays} days</Badge>;
+    return <Badge variant="default">{deadline.toLocaleDateString()}</Badge>;
+  };
+
+  const formatRelativeTime = (date) => {
+    const now = new Date();
+    const then = new Date(date);
+    const diffInSeconds = Math.floor((now - then) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return then.toLocaleDateString();
   };
 
   const StatCard = ({ icon: Icon, label, value, iconColor = 'text-gray-400' }) => (
@@ -194,16 +223,16 @@ const Dashboard = () => {
             >
               <ul className="divide-y divide-gray-200">
                 {recentIssues.map((issue) => (
-                  <li key={issue.id} className="px-6 py-4">
+                  <li key={issue._id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          <Link to={`/issues/${issue.id}`} className="hover:text-[#01a370]">
+                          <Link to={`/issues/details/${issue._id}`} className="hover:text-[#01a370]">
                             {issue.title}
                           </Link>
                         </p>
                         <p className="text-sm text-gray-500 truncate">
-                          {issue.project} • Assigned to {issue.assignee}
+                          {issue.project} • {issue.assignee ? `Assigned to ${issue.assignee}` : 'Unassigned'}
                         </p>
                       </div>
                       <div className="ml-4 flex flex-col items-end">
@@ -211,7 +240,7 @@ const Dashboard = () => {
                           {priorityBadge(issue.priority)}
                           {statusBadge(issue.status)}
                         </div>
-                        <p className="text-xs text-gray-500">{issue.date}</p>
+                        <p className="text-xs text-gray-500">{new Date(issue.date).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </li>
@@ -255,7 +284,7 @@ const Dashboard = () => {
             <Card title="Recent Activity">
               <ul className="divide-y divide-gray-200">
                 {activities.map((activity) => (
-                  <li key={activity.id} className="px-6 py-4">
+                  <li key={activity._id} className="px-6 py-4">
                     <div className="flex space-x-3">
                       <UserAvatar
                         user={{ name: activity.user }}
@@ -267,7 +296,7 @@ const Dashboard = () => {
                         <p className="text-sm text-gray-500">
                           {activity.action} <span className="font-medium">{activity.target}</span>
                         </p>
-                        <p className="text-xs text-gray-400">{activity.time}</p>
+                        <p className="text-xs text-gray-400">{formatRelativeTime(activity.time)}</p>
                       </div>
                     </div>
                   </li>
@@ -307,33 +336,29 @@ const Dashboard = () => {
               actions={<Calendar className="h-5 w-5 text-gray-400" />}
             >
               <ul className="divide-y divide-gray-200">
-                <li className="px-6 py-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Mobile App Beta</p>
-                      <p className="text-xs text-gray-500">Website Redesign project</p>
-                    </div>
-                    <Badge variant="danger">Tomorrow</Badge>
-                  </div>
-                </li>
-                <li className="px-6 py-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">API Documentation</p>
-                      <p className="text-xs text-gray-500">Backend Services project</p>
-                    </div>
-                    <Badge variant="warning">In 3 days</Badge>
-                  </div>
-                </li>
-                <li className="px-6 py-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">User Testing</p>
-                      <p className="text-xs text-gray-500">Analytics Module project</p>
-                    </div>
-                    <Badge variant="default">Next week</Badge>
-                  </div>
-                </li>
+                {upcomingDeadlines.length > 0 ? (
+                  upcomingDeadlines.map((deadline) => (
+                    <li key={deadline._id} className="px-6 py-4">
+                      <div className="flex justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            <Link to={`/issues/details/${deadline._id}`} className="hover:text-[#01a370]">
+                              {deadline.title}
+                            </Link>
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">{deadline.project}</p>
+                        </div>
+                        <div className="ml-4">
+                          {getDeadlineBadge(deadline.due_date)}
+                        </div>
+                      </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="px-6 py-8 text-center text-sm text-gray-500">
+                    No upcoming deadlines
+                  </li>
+                )}
               </ul>
             </Card>
           </div>
