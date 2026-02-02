@@ -35,7 +35,7 @@ const ProjectList = ({ companyId }) => {
   const [processing, setProcessing] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+
   // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
@@ -53,23 +53,23 @@ const ProjectList = ({ companyId }) => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      
+
       // Build query parameters
       const params = {
         page: pagination.page,
         limit: pagination.limit,
       };
-      
+
       if (searchTerm) {
         params.search = searchTerm;
       }
-      
+
       if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
-      
+
       const response = await ProjectApis.getProjects(params);
-      
+
       // Process avatars for all users in the response
       const processedProjects = response.docs.map(project => ({
         ...project,
@@ -85,7 +85,7 @@ const ProjectList = ({ companyId }) => {
           ...project.created_by,
         } : null
       }));
-      
+
       setProjects(processedProjects || []);
       setPagination(prev => ({
         ...prev,
@@ -138,17 +138,17 @@ const ProjectList = ({ companyId }) => {
 
   const handleDeleteProject = async () => {
     if (!projectToDelete) return;
-    
+
     try {
       setProcessing(true);
       const response = await ProjectApis.deleteProject(projectToDelete._id);
-      console.log("res",response)
-      if(response.success){
+      console.log("res", response)
+      if (response.success) {
         toast.success(response?.message?.success_message || 'Project deleted successfully');
-      }else{
+      } else {
         console.log("hello")
         console.log(response);
-        toast.error(response||"Failed to delete project");
+        toast.error(response || "Failed to delete project");
       }
       setShowDeleteModal(false);
       setProjectToDelete(null);
@@ -212,7 +212,7 @@ const ProjectList = ({ companyId }) => {
                 onChange={handleSearch}
                 className="flex-1 max-w-lg"
               />
-              
+
               <select
                 className="block w-full sm:w-auto pl-3 pr-10 py-2 text-base border-gray-300 rounded-md focus:outline-none focus:ring-[#01a370] focus:border-[#01a370] sm:text-sm"
                 value={statusFilter}
@@ -230,12 +230,12 @@ const ProjectList = ({ companyId }) => {
               <EmptyState
                 icon={Filter}
                 title="No projects found"
-                description={pagination.totalDocs === 0 
-                  ? "Get started by creating your first project." 
+                description={pagination.totalDocs === 0
+                  ? "Get started by creating your first project."
                   : "Try adjusting your search or filter criteria."}
                 action={
                   pagination.totalDocs === 0 && (
-                    <Button 
+                    <Button
                       onClick={() => setShowCreateModal(true)}
                       disabled={processing}
                     >
@@ -268,7 +268,7 @@ const ProjectList = ({ companyId }) => {
                       </span> of{' '}
                       <span className="font-medium">{pagination.totalDocs}</span> results
                     </div>
-                    
+
                     <div className="flex space-x-2">
                       <Button
                         variant="outline"
@@ -279,7 +279,7 @@ const ProjectList = ({ companyId }) => {
                       >
                         Previous
                       </Button>
-                      
+
                       <div className="flex items-center space-x-1">
                         {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                           let pageNum;
@@ -292,7 +292,7 @@ const ProjectList = ({ companyId }) => {
                           } else {
                             pageNum = pagination.page - 2 + i;
                           }
-                          
+
                           return (
                             <Button
                               key={pageNum}
@@ -307,7 +307,7 @@ const ProjectList = ({ companyId }) => {
                           );
                         })}
                       </div>
-                      
+
                       <Button
                         variant="outline"
                         size="small"
@@ -361,7 +361,7 @@ const ProjectList = ({ companyId }) => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Project</h3>
             <p className="text-gray-600 text-center mb-6">
-              Are you sure you want to delete <strong>{projectToDelete?.name}</strong>? 
+              Are you sure you want to delete <strong>{projectToDelete?.name}</strong>?
               This action cannot be undone and all project data will be permanently removed.
             </p>
             <div className="flex space-x-3 w-full">
@@ -414,7 +414,7 @@ const ProjectCard = ({ project, onEdit, onDelete, processing }) => {
             <p className="text-gray-600 text-sm mt-1 line-clamp-2">{project.description}</p>
           )}
         </div>
-        
+
         <div className="relative">
           <Button
             variant="ghost"
@@ -423,7 +423,7 @@ const ProjectCard = ({ project, onEdit, onDelete, processing }) => {
             onClick={() => setShowMenu(!showMenu)}
             disabled={processing}
           />
-          
+
           {showMenu && (
             <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
               <button

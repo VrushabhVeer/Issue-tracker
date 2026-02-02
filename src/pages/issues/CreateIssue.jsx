@@ -31,7 +31,7 @@ import { AuthAPI, ProjectApis } from "../../api";
 import ProjectSelect from "../../common/ProjectSelect";
 import IssueApis from "../../api/endpoints/issuesEndpoint";
 
-const CreateIssue = ({companyId}) => {
+const CreateIssue = ({ companyId }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -59,7 +59,7 @@ const CreateIssue = ({companyId}) => {
     story_points: "",
     priority: "medium",
     reporter_id: null,
-    assignee_id:null,
+    assignee_id: null,
     due_date: "",
     estimated_time: "",
     actual_time: "",
@@ -78,34 +78,86 @@ const CreateIssue = ({companyId}) => {
   ];
 
   // Fetch users from API
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
+
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const id = searchParams.get('edit');
+    if (id) {
+      setIsEditMode(true);
+      setEditId(id);
+      fetchIssueForEdit(id);
+    }
     fetchUsers();
     fetchProjectsSimple();
   }, []);
 
+  const fetchIssueForEdit = async (id) => {
+    try {
+      setLoading(true);
+      const response = await IssueApis.getIssueById(id);
+      if (response.success) {
+        const issue = response.data;
+        setFormData({
+          project_id: issue.project_id?._id || "",
+          title: issue.title || "",
+          summary: issue.summary || "",
+          description: issue.description || "",
+          issue_type: issue.issue_type || "task",
+          status: issue.status || "open",
+          story_points: issue.story_points || "",
+          priority: issue.priority || "medium",
+          reporter_id: issue.reporter_id?._id || null,
+          assignee_id: issue.assignee_id?._id || null,
+          due_date: issue.due_date ? issue.due_date.split('T')[0] : "",
+          estimated_time: issue.estimated_time || "",
+          actual_time: issue.actual_time || "",
+          environment: issue.environment || "",
+          sprint_id: issue.sprint_id?._id || "",
+          is_blocked: issue.is_blocked || false,
+          blocked_reason: issue.blocked_reason || "",
+        });
+        setLabels(issue.labels || []);
+        if (issue.subtasks) {
+          setSubtasks(issue.subtasks.map(s => ({ ...s, id: s._id })));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching issue for edit:', error);
+      toast.error('Failed to load issue data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchProjectsSimple = async () => {
-  try {
-    setLoadingProjects(true);
-    const response = await ProjectApis.getProjectNames();
-    setProjects(response || []);
-  } catch (error) {
-    console.error('Error fetching projects list:', error);
-    toast.error(error.message?.error_message || 
-                          error.error_message || 'Failed to fetch projects');
-  } finally {
-    setLoadingProjects(false);
-  }
-};
+    try {
+      setLoadingProjects(true);
+      const response = await ProjectApis.getProjectNames();
+      setProjects(response || []);
+    } catch (error) {
+      console.error('Error fetching projects list:', error);
+      toast.error(error.message?.error_message ||
+        error.error_message || 'Failed to fetch projects');
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
 
   const fetchUsers = async () => {
-    if (!companyId) {
+    // If companyId is not passed as prop, try to get from localStorage/auth context
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    const cid = companyId || storedUser?.company_id;
+
+    if (!cid) {
       setUsersError('Company ID is required');
       return;
     }
     setUsersLoading(true);
     setUsersError('');
     try {
-      const response = await AuthAPI.getAllCompanyMembers(companyId);
+      const response = await AuthAPI.getAllCompanyMembers(cid);
       if (response.error) {
         // setUsersError(response.error || 'Failed to fetch team members');
         console.error('Failed to fetch members:', response.error);
@@ -114,17 +166,17 @@ const CreateIssue = ({companyId}) => {
       }
     } catch (error) {
       console.error('Error fetching company members:', error);
-      
-      const errorMessage = error.message?.error_message || 
-                          error.error_message || 
-                          'Failed to load team members. Please try again.';
-      
+
+      const errorMessage = error.message?.error_message ||
+        error.error_message ||
+        'Failed to load team members. Please try again.';
+
       setUsersError(errorMessage);
-      // toast.error(errorMessage);
     } finally {
       setUsersLoading(false);
     }
   };
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -260,69 +312,32 @@ const CreateIssue = ({companyId}) => {
         ...formData,
         labels,
         subtasks: subtasks.map(({ id, ...subtask }) => subtask),
-        // In a real app, you would add the current user as reporter
-        reporter_id: formData.reporter_id, // Use selected reporter or default
       };
 
       // Convert empty strings to null for number fields
       if (!payload.story_points) payload.story_points = null;
       if (!payload.estimated_time) payload.estimated_time = null;
       if (!payload.actual_time) payload.actual_time = null;
-// if (!payload.assignee_id) payload.assignee_id = null;
-// if (!payload.reporter_id) payload.reporter_id = null;
-      const formDataToSend = new FormData();
 
-      // Append all form fields
-      // Object.keys(payload).forEach((key) => {
-      //   if (
-      //     payload[key] !== null &&
-      //     payload[key] !== undefined &&
-      //     payload[key] !== ""
-      //   ) {
-      //     if (Array.isArray(payload[key])) {
-      //       payload[key].forEach((item) => {
-      //         formDataToSend.append(key, item);
-      //       });
-      //     } else {
-      //       formDataToSend.append(key, payload[key]);
-      //     }
-      //   }
-      // });
-
-      console.log("Payload:", payload);
-      console.log("FormData entries:",formDataToSend);
-
-      // Uncomment to send to your API
-      /*
-      const response = await fetch('http://localhost:4500/api/issues', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formDataToSend
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success('Issue created successfully!');
-        navigate('/issues');
+      if (isEditMode) {
+        await IssueApis.updateIssue(editId, payload);
+        toast.success("Issue updated successfully!");
+        navigate(`/issues/${editId}`);
       } else {
-        throw new Error(data.error || 'Failed to create issue');
+        await IssueApis.createIssue(payload);
+        toast.success("Issue created successfully!");
+        navigate("/issues");
       }
-      */
-     const response = await IssueApis.createIssue(payload);
-     console.log('Issue created:', response);
-
-      toast.success("Issue created successfully!");
-      // navigate("/issues");
     } catch (error) {
-      toast.error(error.message);
-      console.error("Error creating issue:", error);
+      toast.error(error.message?.error_message || error.message || "Failed to save issue");
+      console.error("Error saving issue:", error);
     } finally {
       setLoading(false);
     }
   };
+
+
+
 
   const getStatusBadgeVariant = (status) => {
     const variants = {
@@ -354,10 +369,10 @@ const CreateIssue = ({companyId}) => {
             />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Create New Issue
+                {isEditMode ? "Edit Issue" : "Create New Issue"}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                Add a new issue to track and manage
+                {isEditMode ? "Update the details of this issue" : "Add a new issue to track and manage"}
               </p>
             </div>
           </div>
@@ -369,17 +384,17 @@ const CreateIssue = ({companyId}) => {
           <form onSubmit={handleSubmit}>
             <div className="px-6 py-6 space-y-6">
               {/* Project Selection */}
-<ProjectSelect
-  label="Project"
-  projects={projects}
-  value={formData.project_id}
-  onChange={(projectId) => setFormData(prev => ({ ...prev, project_id: projectId }))}
-  required
-  icon={Building2}
-  loading={loadingProjects}
-  disabled={loadingProjects}
-  helperText="Select the project this issue belongs to"
-/>
+              <ProjectSelect
+                label="Project"
+                projects={projects}
+                value={formData.project_id}
+                onChange={(projectId) => setFormData(prev => ({ ...prev, project_id: projectId }))}
+                required
+                icon={Building2}
+                loading={loadingProjects}
+                disabled={loadingProjects}
+                helperText="Select the project this issue belongs to"
+              />
 
               {/* Title */}
               <Input
@@ -721,10 +736,9 @@ const CreateIssue = ({companyId}) => {
                 variant="primary"
                 loading={loading}
                 disabled={!formData.project_id || !formData.title}
-                icon={Plus}
-                // onClick={handleSubmit}
+                icon={isEditMode ? Edit : Plus}
               >
-                Create Issue
+                {isEditMode ? "Update Issue" : "Create Issue"}
               </Button>
             </div>
           </form>
@@ -773,7 +787,7 @@ const CreateIssue = ({companyId}) => {
                   { value: "closed", label: "Closed" },
                 ]}
               />
-              
+
               {/* Subtask Assignee - Using UserSelect component */}
               <div className="relative">
                 <UserSelect

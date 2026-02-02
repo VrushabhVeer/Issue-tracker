@@ -1,21 +1,23 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  MessageSquare, 
-  Paperclip, 
-  CheckCircle, 
-  AlertCircle, 
-  User, 
-  Edit, 
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  MessageSquare,
+  Paperclip,
+  CheckCircle,
+  AlertCircle,
+  User,
+  Edit,
   Plus,
   Trash2,
   Download,
   ChevronDown,
   ChevronUp
 } from "lucide-react";
+import { toast } from "react-toastify";
+
 
 // Import reusable components
 import Button from '../../common/Button';
@@ -27,6 +29,7 @@ import Badge from '../../common/Badge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import UserAvatar from '../../common/UserAvatar';
 import EmptyState from '../../common/EmptyState';
+import { IssueApis } from "../../api";
 
 const IssueDetails = () => {
   const { id } = useParams();
@@ -41,169 +44,88 @@ const IssueDetails = () => {
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState("");
 
-  // Sample issue data - in real app, you'd fetch this from your API
-  useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      setIssue({
-        _id: id,
-        key: 'WEB-101',
-        title: 'Login page not responsive on mobile devices',
-        summary: 'Login form breaks on mobile screens smaller than 375px',
-        description: 'When accessing the login page on mobile devices with screen widths below 375px, the form elements overflow their container and become unusable. This affects both iOS and Android devices.',
-        issue_type: 'bug',
-        status: 'open',
-        priority: 'high',
-        story_points: 3,
-        reporter_id: {
-          _id: '2',
-          name: 'Michael Chen',
-          avatar: null
-        },
-        assignee_id: {
-          _id: '1',
-          name: 'Sarah Johnson',
-          avatar: null
-        },
-        created_at: '2023-06-15T10:30:00Z',
-        updated_at: '2023-06-18T14:45:00Z',
-        due_date: '2023-06-25T23:59:59Z',
-        estimated_time: 8,
-        actual_time: 4,
-        environment: 'Production - Chrome Mobile iOS',
-        labels: ['mobile', 'ui', 'responsive'],
-        sprint_id: {
-          _id: 'sprint1',
-          name: 'Sprint 12 - Q2 2023'
-        },
-        is_blocked: false,
-        blocked_reason: '',
-        attachments: [
-          {
-            _id: 'att1',
-            file_name: 'screenshot-mobile.png',
-            file_type: 'image/png',
-            file_size: 2457600,
-            uploaded_by: {
-              _id: '2',
-              name: 'Michael Chen'
-            },
-            uploaded_at: '2023-06-15T11:20:00Z'
-          }
-        ],
-        comments: [
-          {
-            _id: 'comment1',
-            user_id: {
-              _id: '1',
-              name: 'Sarah Johnson',
-              avatar: null
-            },
-            content: "I've started looking into this. The issue seems to be with the CSS media queries not accounting for very small screens.",
-            created_at: '2023-06-16T09:15:00Z'
-          },
-          {
-            _id: 'comment2',
-            user_id: {
-              _id: '3',
-              name: 'Emma Davis',
-              avatar: null
-            },
-            content: "This might be related to the recent changes we made to the form layout component. I'll check the commit history.",
-            created_at: '2023-06-16T14:30:00Z'
-          }
-        ],
-        subtasks: [
-          {
-            _id: 'sub1',
-            title: 'Test on various mobile devices',
-            description: 'Verify the fix works across different screen sizes',
-            status: 'open',
-            reporter_id: {
-              _id: '1',
-              name: 'Sarah Johnson'
-            },
-            assignee_id: {
-              _id: '5',
-              name: 'You'
-            },
-            due_date: '2023-06-23T23:59:59Z',
-            created_at: '2023-06-16T09:20:00Z'
-          }
-        ],
-        history: [
-          {
-            field: 'status',
-            old_value: 'open',
-            new_value: 'in_progress',
-            changed_by: {
-              _id: '1',
-              name: 'Sarah Johnson'
-            },
-            changed_at: '2023-06-16T09:15:00Z'
-          }
-        ]
-      });
+  const fetchIssue = async () => {
+    try {
+      setLoading(true);
+      const response = await IssueApis.getIssueById(id);
+      if (response.success) {
+        setIssue(response.data);
+      }
+    } catch (error) {
+      console.error("Fetch issue error:", error);
+      toast.error(error.message?.error_message || "Failed to load issue details");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
+  };
+
+  useEffect(() => {
+    fetchIssue();
   }, [id]);
 
-  const handleAddComment = () => {
+  const handleDeleteIssue = async () => {
+    if (window.confirm("Are you sure you want to delete this issue? This action cannot be undone.")) {
+      try {
+        const response = await IssueApis.deleteIssue(id);
+        if (response.success) {
+          navigate("/issues");
+        }
+      } catch (err) {
+        console.error("Delete failed:", err);
+        toast.error(err.message?.error_message || "Failed to delete issue");
+      }
+    }
+  };
+
+
+  const handleAddComment = async () => {
     if (!commentText.trim()) return;
-    
-    const newComment = {
-      _id: `comment${Date.now()}`,
-      user_id: {
-        _id: 'current-user',
-        name: 'You',
-        avatar: null
-      },
-      content: commentText,
-      created_at: new Date().toISOString()
-    };
 
-    setIssue(prev => ({
-      ...prev,
-      comments: [...prev.comments, newComment]
-    }));
-    setCommentText("");
+    try {
+      const response = await IssueApis.addComment(id, commentText.trim());
+      if (response.success) {
+        setIssue(response.data);
+        setCommentText("");
+      }
+    } catch (err) {
+      console.error("Add comment failed:", err);
+      toast.error(err.message?.error_message || "Failed to add comment");
+    }
   };
 
-  const handleAddSubtask = () => {
+  const handleAddSubtask = async () => {
     if (!subtaskTitle.trim()) return;
-    
-    const newSubtask = {
-      _id: `sub${Date.now()}`,
-      title: subtaskTitle,
-      description: subtaskDescription,
-      status: 'open',
-      reporter_id: {
-        _id: 'current-user',
-        name: 'You'
-      },
-      assignee_id: null,
-      due_date: null,
-      created_at: new Date().toISOString()
-    };
 
-    setIssue(prev => ({
-      ...prev,
-      subtasks: [...prev.subtasks, newSubtask]
-    }));
-    
-    setSubtaskTitle("");
-    setSubtaskDescription("");
-    setShowSubtaskForm(false);
+    try {
+      const subtaskData = {
+        title: subtaskTitle.trim(),
+        description: subtaskDescription.trim(),
+      };
+      const response = await IssueApis.addSubtask(id, subtaskData);
+      if (response.success) {
+        setIssue(response.data);
+        setSubtaskTitle("");
+        setSubtaskDescription("");
+        setShowSubtaskForm(false);
+      }
+    } catch (err) {
+      console.error("Add subtask failed:", err);
+      toast.error(err.message?.error_message || "Failed to add subtask");
+    }
   };
 
-  const handleUpdateField = (field, value) => {
-    setIssue(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    setEditingField(null);
-    setEditValue("");
+  const handleUpdateField = async (field, value) => {
+    try {
+      const response = await IssueApis.updateIssue(id, { [field]: value });
+      if (response.success) {
+        setIssue(response.data);
+      }
+    } catch (err) {
+      console.error(`Update ${field} failed:`, err);
+      toast.error(err.message?.error_message || `Failed to update ${field}`);
+    }
   };
+
 
   const priorityOptions = [
     { value: 'lowest', label: 'Lowest' },
@@ -288,10 +210,22 @@ const IssueDetails = () => {
               </div>
             </div>
             <div className="flex space-x-3">
-              <Button variant="secondary" icon={Edit}>
+              <Button
+                variant="secondary"
+                icon={Edit}
+                onClick={() => navigate(`/issues/new?edit=${issue._id}`)}
+              >
                 Edit
               </Button>
+              <Button
+                variant="danger"
+                icon={Trash2}
+                onClick={handleDeleteIssue}
+              >
+                Delete
+              </Button>
             </div>
+
           </div>
         </div>
       </div>
@@ -324,7 +258,7 @@ const IssueDetails = () => {
                     </div>
                   </div>
                 ))}
-                
+
                 {/* Add Comment */}
                 <div className="mt-6">
                   <TextArea
@@ -348,8 +282,8 @@ const IssueDetails = () => {
             </Card>
 
             {/* Subtasks */}
-            <Card 
-              title="Subtasks" 
+            <Card
+              title="Subtasks"
               actions={
                 <Button
                   onClick={() => setShowSubtaskForm(!showSubtaskForm)}
@@ -396,7 +330,7 @@ const IssueDetails = () => {
                   </div>
                 </div>
               )}
-              
+
               {issue.subtasks.length > 0 ? (
                 <div className="space-y-3">
                   {issue.subtasks.map((subtask) => (

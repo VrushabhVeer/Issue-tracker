@@ -37,46 +37,42 @@ const Navbar = () => {
                 IssueTracker
               </span>
             </Link>
-            
+
             {/* Desktop navigation links */}
             <div className="hidden md:ml-6 md:flex md:items-center md:space-x-4">
-              <Link
+              {/* <Link
                 to="/dashboard"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActiveLink("/dashboard") 
-                    ? "bg-gray-100 text-[#01a370]" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${isActiveLink("/dashboard")
+                    ? "bg-gray-100 text-[#01a370]"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 Dashboard
-              </Link>
+              </Link> */}
               <Link
                 to="/projects"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActiveLink("/projects") 
-                    ? "bg-gray-100 text-[#01a370]" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${isActiveLink("/projects")
+                    ? "bg-gray-100 text-[#01a370]"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 Projects
               </Link>
               <Link
                 to="/issues"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActiveLink("/issues") 
-                    ? "bg-gray-100 text-[#01a370]" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${isActiveLink("/issues")
+                    ? "bg-gray-100 text-[#01a370]"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 Issues
               </Link>
               <Link
                 to="/reports"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActiveLink("/reports") 
-                    ? "bg-gray-100 text-[#01a370]" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${isActiveLink("/reports")
+                    ? "bg-gray-100 text-[#01a370]"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 Reports
               </Link>
@@ -105,7 +101,7 @@ const Navbar = () => {
                 <PlusCircle className="h-5 w-5" />
                 <span className="sr-only">Create new</span>
               </button>
-              
+
               <button className="ml-2 p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#01a370]">
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">View notifications</span>
@@ -132,7 +128,7 @@ const Navbar = () => {
                     )}
                   </button>
                 </div>
-                
+
                 {isProfileDropdownOpen && (
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
                     <div className="px-4 py-2 border-b border-gray-100">
@@ -184,47 +180,43 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-            <Link
+            {/* <Link
               to="/dashboard"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
-                isActiveLink("/dashboard") 
-                  ? "bg-gray-100 text-[#01a370]" 
+              className={`block px-3 py-2 rounded-md text-base font-medium ${isActiveLink("/dashboard")
+                  ? "bg-gray-100 text-[#01a370]"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+                }`}
             >
               Dashboard
-            </Link>
+            </Link> */}
             <Link
               to="/projects"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
-                isActiveLink("/projects") 
-                  ? "bg-gray-100 text-[#01a370]" 
+              className={`block px-3 py-2 rounded-md text-base font-medium ${isActiveLink("/projects")
+                  ? "bg-gray-100 text-[#01a370]"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+                }`}
             >
               Projects
             </Link>
             <Link
               to="/issues"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
-                isActiveLink("/issues") 
-                  ? "bg-gray-100 text-[#01a370]" 
+              className={`block px-3 py-2 rounded-md text-base font-medium ${isActiveLink("/issues")
+                  ? "bg-gray-100 text-[#01a370]"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+                }`}
             >
               Issues
             </Link>
             <Link
               to="/reports"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
-                isActiveLink("/reports") 
-                  ? "bg-gray-100 text-[#01a370]" 
+              className={`block px-3 py-2 rounded-md text-base font-medium ${isActiveLink("/reports")
+                  ? "bg-gray-100 text-[#01a370]"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+                }`}
             >
               Reports
             </Link>
-            
+
             {/* Mobile search */}
             <div className="px-3 py-2">
               <div className="relative mt-1 rounded-md shadow-sm">

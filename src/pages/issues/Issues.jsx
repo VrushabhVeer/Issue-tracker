@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Filter, 
-  Plus, 
-  Search, 
+import {
+  Filter,
+  Plus,
+  Search,
   Download,
   SlidersHorizontal,
   ChevronDown,
@@ -11,6 +11,8 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import { toast } from "react-toastify";
+
 
 // Import reusable components
 import Button from '../../common/Button';
@@ -78,7 +80,7 @@ const IssuesPage = () => {
       }
     } catch (error) {
       console.error('Failed to fetch issues:', error);
-      // Handle error (show toast notification, etc.)
+      toast.error(error.message?.error_message || "Failed to fetch issues");
     } finally {
       setLoading(false);
       setProcessing(false);
@@ -190,7 +192,7 @@ const IssuesPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-lg"
             />
-            
+
             <div className="flex space-x-3">
               <Button
                 variant={showFilters ? "primary" : "secondary"}
@@ -207,7 +209,7 @@ const IssuesPage = () => {
               </Button>
             </div>
           </div>
-          
+
           {/* Expanded Filters */}
           {showFilters && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
@@ -225,7 +227,7 @@ const IssuesPage = () => {
                   { value: "reopened", label: "Reopened" }
                 ]}
               />
-              
+
               <Select
                 label="Priority"
                 value={priorityFilter}
@@ -241,7 +243,7 @@ const IssuesPage = () => {
                   { value: "critical", label: "Critical" }
                 ]}
               />
-              
+
               <Select
                 label="Type"
                 value={typeFilter}
@@ -265,14 +267,14 @@ const IssuesPage = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
-                    onClick={() => handleSort("project_key")}
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-48"
+                    onClick={() => handleSort("project_id")}
                   >
                     <div className="flex items-center">
-                      Key
-                      {sortField === "project_key" && (
+                      Project
+                      {sortField === "project_id" && (
                         sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
                       )}
                     </div>
@@ -280,15 +282,15 @@ const IssuesPage = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Title
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-24"
                     onClick={() => handleSort("issue_type")}
                   >
                     Type
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-28"
                     onClick={() => handleSort("priority")}
                   >
@@ -299,8 +301,8 @@ const IssuesPage = () => {
                       )}
                     </div>
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
                     onClick={() => handleSort("status")}
                   >
@@ -322,13 +324,14 @@ const IssuesPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredIssues.length > 0 ? (
                   filteredIssues.map((issue) => (
-                    <tr 
-                      key={issue._id} 
-                      className="hover:bg-gray-50 cursor-pointer" 
+                    <tr
+                      key={issue._id}
+                      className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => navigate(`/issues/details/${issue._id}`)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-[#01a370]">{issue.project_key}</div>
+                        <div className="text-sm font-medium text-gray-900">{issue.project_id?.name}</div>
+                        <div className="text-xs font-medium text-[#01a370]">{issue.project_id?.key}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900 truncate max-w-md">{issue.title}</div>
@@ -385,7 +388,7 @@ const IssuesPage = () => {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="px-6 py-4 border-t border-gray-200">
@@ -397,7 +400,7 @@ const IssuesPage = () => {
                   </span> of{' '}
                   <span className="font-medium">{pagination.totalDocs}</span> results
                 </div>
-                
+
                 <div className="flex space-x-2">
                   <Button
                     variant="outline"
@@ -408,7 +411,7 @@ const IssuesPage = () => {
                   >
                     Previous
                   </Button>
-                  
+
                   <div className="flex items-center space-x-1">
                     {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                       let pageNum;
@@ -421,7 +424,7 @@ const IssuesPage = () => {
                       } else {
                         pageNum = pagination.page - 2 + i;
                       }
-                      
+
                       return (
                         <Button
                           key={pageNum}
@@ -436,7 +439,7 @@ const IssuesPage = () => {
                       );
                     })}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     size="small"

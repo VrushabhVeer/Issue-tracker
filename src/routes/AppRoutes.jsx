@@ -15,9 +15,9 @@ const AppRoutes = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/issues" element={<IssuesPage/>} />
-            <Route path="/issues/details" element={<IssueDetails/>} />
-            <Route path="/issues/new" element={<CreateIssue companyId={company_id}/>} />
+            <Route path="/issues" element={<IssuesPage />} />
+            <Route path="/issues/details/:id" element={<IssueDetails />} />
+            <Route path="/issues/new" element={<CreateIssue companyId={company_id} />} />
             <Route path="/projects" element={<ProjectList companyId={company_id} />} />
         </Routes>
     );

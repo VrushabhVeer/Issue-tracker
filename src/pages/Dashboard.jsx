@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  BarChart3, 
-  Calendar, 
-  CheckCircle, 
-  Clock, 
-  FileText, 
-  Filter, 
-  Plus, 
-  Search, 
+import {
+  BarChart3,
+  Calendar,
+  CheckCircle,
+  Clock,
+  FileText,
+  Filter,
+  Plus,
+  Search,
   Users,
   AlertCircle,
   TrendingUp,
@@ -20,40 +20,70 @@ import Button from '../common/Button';
 import Card from '../common/Card';
 import Badge from '../common/Badge';
 import UserAvatar from '../common/UserAvatar';
+import { DashboardApis } from "../api";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
-    totalProjects: 12,
-    openIssues: 47,
-    resolvedIssues: 28,
-    teamMembers: 8
+    totalProjects: 0,
+    openIssues: 0,
+    resolvedIssues: 0,
+    teamMembers: 0
   });
-    const navigate = useNavigate();
-  // Sample data for recent issues
-  const [recentIssues, setRecentIssues] = useState([
-    { id: 1, title: 'Login page not responsive', project: 'Website Redesign', priority: 'high', status: 'open', assignee: 'Sarah Johnson', date: '2023-06-15' },
-    { id: 2, title: 'API rate limiting not working', project: 'Backend Services', priority: 'medium', status: 'in progress', assignee: 'Michael Chen', date: '2023-06-14' },
-    { id: 3, title: 'Dashboard chart data incorrect', project: 'Analytics Module', priority: 'high', status: 'open', assignee: 'You', date: '2023-06-14' },
-    { id: 4, title: 'User profile image upload fails', project: 'Mobile App', priority: 'low', status: 'resolved', assignee: 'Emma Davis', date: '2023-06-13' },
-    { id: 5, title: 'Email notifications delayed', project: 'Notification System', priority: 'medium', status: 'in progress', assignee: 'Alex Rodriguez', date: '2023-06-12' }
-  ]);
 
-  // Sample data for projects
-  const [projects, setProjects] = useState([
-    { id: 1, name: 'Website Redesign', progress: 75, issues: 18, completed: 12 },
-    { id: 2, name: 'Mobile App Development', progress: 45, issues: 24, completed: 8 },
-    { id: 3, name: 'Backend Services', progress: 90, issues: 8, completed: 15 },
-    { id: 4, name: 'Analytics Module', progress: 30, issues: 14, completed: 6 }
-  ]);
+  const navigate = useNavigate();
 
-  // Sample activity data
-  const [activities, setActivities] = useState([
-    { id: 1, user: 'Sarah Johnson', action: 'created a new issue', target: 'Login page not responsive', time: '2 hours ago' },
-    { id: 2, user: 'Michael Chen', action: 'commented on', target: 'API rate limiting', time: '4 hours ago' },
-    { id: 3, user: 'Emma Davis', action: 'resolved', target: 'User profile image upload', time: 'yesterday' },
-    { id: 4, user: 'Alex Rodriguez', action: 'assigned', target: 'Email notifications', time: 'yesterday' }
-  ]);
+  const [recentIssues, setRecentIssues] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [activities, setActivities] = useState([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await DashboardApis.getDashboardStats();
+        if (response.success) {
+          setStats(response.data.stats);
+          setRecentIssues(response.data.recentIssues);
+          setProjects(response.data.projects);
+          setActivities(response.data.activities);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+        setError("Could not load dashboard data. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#01a370]"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center p-8">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <Button variant="primary" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
 
   const priorityBadge = (priority) => {
     const variants = {
@@ -116,7 +146,7 @@ const Dashboard = () => {
             </div>
             <div className="mt-4 flex md:mt-0 md:ml-4">
               <Button variant="primary" icon={Plus} onClick={() => navigate("/issues/new")}>
-                New Issue 
+                New Issue
               </Button>
             </div>
           </div>
@@ -126,26 +156,26 @@ const Dashboard = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <StatCard 
-            icon={FolderOpen} 
-            label="Total Projects" 
-            value={stats.totalProjects} 
+          <StatCard
+            icon={FolderOpen}
+            label="Total Projects"
+            value={stats.totalProjects}
           />
-          <StatCard 
-            icon={AlertCircle} 
-            label="Open Issues" 
+          <StatCard
+            icon={AlertCircle}
+            label="Open Issues"
             value={stats.openIssues}
             iconColor="text-red-400"
           />
-          <StatCard 
-            icon={CheckCircle} 
-            label="Resolved Issues" 
+          <StatCard
+            icon={CheckCircle}
+            label="Resolved Issues"
             value={stats.resolvedIssues}
             iconColor="text-green-400"
           />
-          <StatCard 
-            icon={Users} 
-            label="Team Members" 
+          <StatCard
+            icon={Users}
+            label="Team Members"
             value={stats.teamMembers}
             iconColor="text-blue-400"
           />
@@ -154,8 +184,8 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Issues */}
           <div className="lg:col-span-2">
-            <Card 
-              title="Recent Issues" 
+            <Card
+              title="Recent Issues"
               actions={
                 <Button variant="secondary" size="small" icon={Filter}>
                   Filter
@@ -204,8 +234,8 @@ const Dashboard = () => {
                       <span className="text-sm font-medium text-gray-900">{project.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className="bg-[#01a370] h-2.5 rounded-full" 
+                      <div
+                        className="bg-[#01a370] h-2.5 rounded-full"
                         style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
@@ -227,9 +257,9 @@ const Dashboard = () => {
                 {activities.map((activity) => (
                   <li key={activity.id} className="px-6 py-4">
                     <div className="flex space-x-3">
-                      <UserAvatar 
-                        user={{ name: activity.user }} 
-                        size="medium" 
+                      <UserAvatar
+                        user={{ name: activity.user }}
+                        size="medium"
                         showName={false}
                       />
                       <div className="flex-1 min-w-0">
@@ -248,32 +278,32 @@ const Dashboard = () => {
             {/* Quick Actions */}
             <Card title="Quick Actions">
               <div className="grid grid-cols-2 gap-4">
-                <QuickActionButton 
-                  icon={Plus} 
-                  label="New Issue" 
-                  to="/issues/new" 
+                <QuickActionButton
+                  icon={Plus}
+                  label="New Issue"
+                  to="/issues/new"
                 />
-                <QuickActionButton 
-                  icon={FolderOpen} 
-                  label="New Project" 
-                  to="/projects/new" 
+                <QuickActionButton
+                  icon={FolderOpen}
+                  label="New Project"
+                  to="/projects/new"
                 />
-                <QuickActionButton 
-                  icon={BarChart3} 
-                  label="Reports" 
-                  to="/reports" 
+                <QuickActionButton
+                  icon={BarChart3}
+                  label="Reports"
+                  to="/reports"
                 />
-                <QuickActionButton 
-                  icon={Users} 
-                  label="Team" 
-                  to="/team" 
+                <QuickActionButton
+                  icon={Users}
+                  label="Team"
+                  to="/team"
                 />
               </div>
             </Card>
 
             {/* Upcoming Deadlines */}
-            <Card 
-              title="Upcoming Deadlines" 
+            <Card
+              title="Upcoming Deadlines"
               actions={<Calendar className="h-5 w-5 text-gray-400" />}
             >
               <ul className="divide-y divide-gray-200">
