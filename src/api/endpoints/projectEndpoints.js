@@ -17,7 +17,7 @@ const ProjectApis = {
           'Pragma': 'no-cache'
         }
       });
-      return response.data;
+      return response;
     } catch (error) {
       console.error('getProjects error:', error);
       throw error.response?.data || error;
@@ -27,7 +27,7 @@ const ProjectApis = {
   getProjectNames: async () => {
   try {
     const response = await axiosInstance.get(`/projects/project-names`);
-    return response.data;
+    return response;
   } catch (error) {
     console.error('getProjectsSimple error:', error);
     throw error.response?.data || error;
@@ -79,7 +79,7 @@ updateProject: async (id, projectData) => {
         'Content-Type': 'application/json'
       }
     });
-    return response.data;
+    return response;
   } catch (error) {
     console.error('updateProject error:', error);
     throw error.response?.data || error;
@@ -89,7 +89,7 @@ updateProject: async (id, projectData) => {
   deleteProject: async (id) => {
     try {
       const response = await axiosInstance.delete(`/projects/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       // console.error('deleteProject error:', error);
       // if(error?.error_type){

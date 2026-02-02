@@ -70,8 +70,14 @@ const ProjectList = ({ companyId }) => {
 
       const response = await ProjectApis.getProjects(params);
 
+      if (!response.success) {
+        throw new Error(response.message?.error_message || 'Failed to fetch projects');
+      }
+
+      const projectsData = response.data;
+
       // Process avatars for all users in the response
-      const processedProjects = response.docs.map(project => ({
+      const processedProjects = projectsData.docs.map(project => ({
         ...project,
         project_lead: project.project_lead ? {
           ...project.project_lead,
@@ -89,10 +95,10 @@ const ProjectList = ({ companyId }) => {
       setProjects(processedProjects || []);
       setPagination(prev => ({
         ...prev,
-        totalPages: response.totalPages,
-        totalDocs: response.totalDocs,
-        hasNextPage: response.hasNextPage,
-        hasPrevPage: response.hasPrevPage
+        totalPages: projectsData.totalPages,
+        totalDocs: projectsData.totalDocs,
+        hasNextPage: projectsData.hasNextPage,
+        hasPrevPage: projectsData.hasPrevPage
       }));
     } catch (error) {
       console.error('Error fetching projects:', error);
