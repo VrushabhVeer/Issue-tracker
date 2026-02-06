@@ -28,7 +28,7 @@ import Badge from "../../common/Badge";
 import EmptyState from "../../common/EmptyState";
 import Modal from "../../common/Modal";
 import UserSelect from "../../common/UserSelect";
-import { AuthAPI, ProjectApis } from "../../api";
+import { AuthAPI, ProjectApis, SprintApis } from "../../api";
 import ProjectSelect from "../../common/ProjectSelect";
 import IssueApis from "../../api/endpoints/issuesEndpoint";
 
@@ -71,12 +71,26 @@ const CreateIssue = ({ companyId }) => {
   });
   const [projects, setProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [projectSprints, setProjectSprints] = useState([]);
 
-  const sprints = [
-    { _id: "1", name: "Sprint 1 - Jan 2023" },
-    { _id: "2", name: "Sprint 2 - Feb 2023" },
-    { _id: "3", name: "Sprint 3 - Mar 2023" },
-  ];
+  useEffect(() => {
+    if (formData.project_id) {
+      fetchSprints(formData.project_id);
+    } else {
+      setProjectSprints([]);
+    }
+  }, [formData.project_id]);
+
+  const fetchSprints = async (projectId) => {
+    try {
+      const response = await SprintApis.getProjectSprints(projectId);
+      if (response.success) {
+        setProjectSprints(response.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching sprints:", error);
+    }
+  };
 
   // Fetch users from API
   const [isEditMode, setIsEditMode] = useState(false);
@@ -493,9 +507,9 @@ const CreateIssue = ({ companyId }) => {
                   onChange={handleChange}
                   options={[
                     { value: "", label: "No Sprint" },
-                    ...sprints.map((sprint) => ({
+                    ...projectSprints.map((sprint) => ({
                       value: sprint._id,
-                      label: sprint.name,
+                      label: `${sprint.name} (${sprint.status})`,
                     })),
                   ]}
                 />

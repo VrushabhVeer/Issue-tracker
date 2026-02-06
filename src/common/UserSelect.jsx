@@ -4,19 +4,20 @@ import { Search, X, Check } from 'lucide-react';
 import Input from './Input';
 import UserAvatar from './UserAvatar';
 
-const UserSelect = ({ 
-  label, 
+const UserSelect = ({
+  label,
   companyMembers,
-  companyId, 
-  value, 
-  onChange, 
-  error, 
-  helperText, 
-  required, 
-  multiple = false, 
+  companyId,
+  value,
+  onChange,
+  error,
+  helperText,
+  required,
+  multiple = false,
+  showArrow = true,
   icon: Icon,
   className = '',
-  containerClassName = '' 
+  containerClassName = ''
 }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,14 +57,14 @@ const UserSelect = ({
       }
       return user;
     });
-    
+
     setUsers(processedUsers || []);
     setLoading(false);
   }, [companyMembers]);
 
   const filteredUsers = useMemo(() => {
     if (!searchTerm) return users;
-    return users.filter(user => 
+    return users.filter(user =>
       user && user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user && user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -110,7 +111,7 @@ const UserSelect = ({
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
     setSearchTerm(''); // Reset search when opening/closing
-    
+
     // Focus on search input when dropdown opens
     if (!isOpen && inputRef.current) {
       setTimeout(() => {
@@ -131,10 +132,10 @@ const UserSelect = ({
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
-      
+
       <div className="relative">
         {/* Input display */}
-        <div 
+        <div
           className={`
             min-h-10 flex items-center flex-wrap gap-2 w-full border border-gray-300 rounded-md shadow-sm 
             focus:ring-[#01a370] focus:border-[#01a370] px-3 py-2 text-sm cursor-pointer
@@ -148,7 +149,7 @@ const UserSelect = ({
               <Icon className="h-5 w-5 text-gray-400" />
             </div>
           )}
-          
+
           {multiple ? (
             <>
               {getSelectedCount() === 0 ? (
@@ -194,12 +195,14 @@ const UserSelect = ({
               )}
             </>
           )}
-          
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-            <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
+
+          {showArrow && (
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+              <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+          )}
         </div>
 
         {/* Dropdown */}
@@ -215,7 +218,7 @@ const UserSelect = ({
                 className="mb-0"
               />
             </div>
-            
+
             {loading ? (
               <div className="p-4 text-center text-gray-500">Loading users...</div>
             ) : filteredUsers.length === 0 ? (
@@ -224,17 +227,16 @@ const UserSelect = ({
               <ul className="py-1">
                 {filteredUsers.map((user) => {
                   if (!user) return null;
-                  
-                  const isSelected = multiple 
+
+                  const isSelected = multiple
                     ? (value || []).includes(user._id)
                     : value === user._id;
-                  
+
                   return (
                     <li
                       key={user._id}
-                      className={`px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between ${
-                        isSelected ? 'bg-blue-50' : ''
-                      }`}
+                      className={`px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between ${isSelected ? 'bg-blue-50' : ''
+                        }`}
                       onClick={() => handleSelectUser(user._id)}
                     >
                       <div className="flex items-center">
@@ -255,7 +257,7 @@ const UserSelect = ({
           </div>
         )}
       </div>
-      
+
       {(error || helperText) && (
         <p className={`mt-1 text-sm ${error ? 'text-red-600' : 'text-gray-500'}`}>
           {error || helperText}

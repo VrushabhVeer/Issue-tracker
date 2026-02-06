@@ -3,6 +3,8 @@ import Dashboard from "../pages/Dashboard";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import ProjectList from "../pages/projects/ProjectList";
+import Board from "../pages/projects/Board";
+import Backlog from "../pages/projects/Backlog";
 import IssuesPage from "../pages/issues/Issues";
 import IssueDetails from "../pages/issues/IssueDetails";
 import CreateIssue from "../pages/issues/CreateIssue";
@@ -27,6 +29,8 @@ const AppRoutes = () => {
             <Route path="/issues/details/:id" element={<ProtectedRoute><IssueDetails /></ProtectedRoute>} />
             <Route path="/issues/new" element={<ProtectedRoute><CreateIssue companyId={getCompanyId()} /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><ProjectList companyId={getCompanyId()} /></ProtectedRoute>} />
+            <Route path="/projects/:id/board" element={<ProtectedRoute><Board /></ProtectedRoute>} />
+            <Route path="/projects/:id/backlog" element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
 
             {/* Static Pages */}

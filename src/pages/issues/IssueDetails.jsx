@@ -29,7 +29,9 @@ import Badge from '../../common/Badge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import UserAvatar from '../../common/UserAvatar';
 import EmptyState from '../../common/EmptyState';
-import { IssueApis } from "../../api";
+import Modal from '../../common/Modal';
+import UserSelect from '../../common/UserSelect';
+import { IssueApis, SprintApis, AuthAPI } from "../../api";
 
 const IssueDetails = () => {
   const { id } = useParams();
@@ -43,6 +45,101 @@ const IssueDetails = () => {
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState("");
+  const [projectSprints, setProjectSprints] = useState([]);
+  const [companyUsers, setCompanyUsers] = useState([]);
+  const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
+  const [isDeleteSubtaskModalOpen, setIsDeleteSubtaskModalOpen] = useState(false);
+  const [selectedSubtask, setSelectedSubtask] = useState(null);
+  const [subtaskToDelete, setSubtaskToDelete] = useState(null);
+  const [subtaskFormData, setSubtaskFormData] = useState({
+    title: "",
+    description: "",
+    status: "open",
+    assignee_id: "",
+    due_date: ""
+  });
+
+  const fetchUsers = async (companyId) => {
+    try {
+      const response = await AuthAPI.getAllCompanyMembers(companyId);
+      if (response && response.users) {
+        setCompanyUsers(response.users);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const handleOpenSubtaskModal = (subtask = null) => {
+    if (subtask) {
+      setSelectedSubtask(subtask);
+      setSubtaskFormData({
+        title: subtask.title,
+        description: subtask.description || "",
+        status: subtask.status,
+        assignee_id: subtask.assignee_id?._id || subtask.assignee_id || "",
+        due_date: subtask.due_date ? subtask.due_date.split('T')[0] : ""
+      });
+    } else {
+      setSelectedSubtask(null);
+      setSubtaskFormData({
+        title: "",
+        description: "",
+        status: "open",
+        assignee_id: "",
+        due_date: ""
+      });
+    }
+    setIsSubtaskModalOpen(true);
+  };
+
+  const handleSaveSubtask = async () => {
+    if (!subtaskFormData.title.trim()) {
+      toast.error("Subtask title is required");
+      return;
+    }
+
+    try {
+      if (selectedSubtask) {
+        // Update subtask: find index and replace in array, then update issue
+        const updatedSubtasks = issue.subtasks.map(s =>
+          s._id === selectedSubtask._id ? { ...s, ...subtaskFormData } : s
+        );
+        const response = await IssueApis.updateIssue(id, { subtasks: updatedSubtasks });
+        if (response.success) {
+          setIssue(response.data);
+          toast.success("Subtask updated");
+        }
+      } else {
+        // Add new subtask
+        const response = await IssueApis.addSubtask(id, subtaskFormData);
+        if (response.success) {
+          setIssue(response.data);
+          toast.success("Subtask added");
+        }
+      }
+      setIsSubtaskModalOpen(false);
+    } catch (error) {
+      toast.error(error.message?.error_message || "Failed to save subtask");
+    }
+  };
+
+  const handleDeleteSubtask = async () => {
+    if (!subtaskToDelete) return;
+
+    try {
+      const updatedSubtasks = issue.subtasks.filter(s => s._id !== subtaskToDelete._id);
+      const response = await IssueApis.updateIssue(id, { subtasks: updatedSubtasks });
+      if (response.success) {
+        setIssue(response.data);
+        toast.success("Subtask deleted");
+      }
+      setIsDeleteSubtaskModalOpen(false);
+      setSubtaskToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete subtask");
+    }
+  };
 
   const fetchIssue = async () => {
     try {
@@ -50,12 +147,31 @@ const IssueDetails = () => {
       const response = await IssueApis.getIssueById(id);
       if (response.success) {
         setIssue(response.data);
+        if (response.data.project_id) {
+          fetchSprints(response.data.project_id._id);
+        }
+        // Fetch users if company_id is available
+        const companyId = localStorage.getItem("company_id");
+        if (companyId) {
+          fetchUsers(companyId);
+        }
       }
     } catch (error) {
       console.error("Fetch issue error:", error);
       toast.error(error.message?.error_message || "Failed to load issue details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSprints = async (projectId) => {
+    try {
+      const response = await SprintApis.getProjectSprints(projectId);
+      if (response.success) {
+        setProjectSprints(response.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching sprints:", error);
     }
   };
 
@@ -90,27 +206,6 @@ const IssueDetails = () => {
     } catch (err) {
       console.error("Add comment failed:", err);
       toast.error(err.message?.error_message || "Failed to add comment");
-    }
-  };
-
-  const handleAddSubtask = async () => {
-    if (!subtaskTitle.trim()) return;
-
-    try {
-      const subtaskData = {
-        title: subtaskTitle.trim(),
-        description: subtaskDescription.trim(),
-      };
-      const response = await IssueApis.addSubtask(id, subtaskData);
-      if (response.success) {
-        setIssue(response.data);
-        setSubtaskTitle("");
-        setSubtaskDescription("");
-        setShowSubtaskForm(false);
-      }
-    } catch (err) {
-      console.error("Add subtask failed:", err);
-      toast.error(err.message?.error_message || "Failed to add subtask");
     }
   };
 
@@ -150,6 +245,17 @@ const IssueDetails = () => {
     { value: 'story', label: 'Story' },
     { value: 'epic', label: 'Epic' }
   ];
+
+  const getStatusBadgeVariant = (status) => {
+    const variants = {
+      open: 'primary',
+      in_progress: 'info',
+      resolved: 'success',
+      closed: 'default',
+      reopened: 'warning'
+    };
+    return variants[status] || 'default';
+  };
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -241,6 +347,66 @@ const IssueDetails = () => {
               </p>
             </Card>
 
+            {/* Subtasks */}
+            <Card
+              title="Subtasks"
+              actions={
+                <Button
+                  onClick={() => handleOpenSubtaskModal()}
+                  variant="primary"
+                  size="small"
+                  icon={Plus}
+                >
+                  Add Subtask
+                </Button>
+              }
+            >
+              {issue.subtasks.length > 0 ? (
+                <div className="space-y-3">
+                  {issue.subtasks.map((subtask) => (
+                    <div
+                      key={subtask._id}
+                      className="group flex items-center justify-between p-3 border border-gray-200 rounded-md hover:border-[#01a370] hover:bg-gray-50 transition-all cursor-pointer"
+                      onClick={() => handleOpenSubtaskModal(subtask)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#01a370]">{subtask.title}</h4>
+                          {subtask.description && (
+                            <p className="text-sm text-gray-500 line-clamp-1">{subtask.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex flex-col items-end">
+                          <Badge variant={getStatusBadgeVariant(subtask.status)} className="scale-75">
+                            {subtask.status.replace("_", " ")}
+                          </Badge>
+                          {subtask.due_date && (
+                            <span className="text-[10px] text-gray-400 mt-1">
+                              Due: {new Date(subtask.due_date).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSubtaskToDelete(subtask);
+                            setIsDeleteSubtaskModalOpen(true);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">No subtasks yet.</p>
+              )}
+            </Card>
+
             {/* Comments */}
             <Card title="Comments">
               <div className="space-y-4">
@@ -280,84 +446,6 @@ const IssueDetails = () => {
                 </div>
               </div>
             </Card>
-
-            {/* Subtasks */}
-            <Card
-              title="Subtasks"
-              actions={
-                <Button
-                  onClick={() => setShowSubtaskForm(!showSubtaskForm)}
-                  variant="primary"
-                  size="small"
-                  icon={Plus}
-                >
-                  Add Subtask
-                </Button>
-              }
-            >
-              {/* Subtask Form */}
-              {showSubtaskForm && (
-                <div className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
-                  <div className="space-y-3">
-                    <Input
-                      label="Title"
-                      value={subtaskTitle}
-                      onChange={(e) => setSubtaskTitle(e.target.value)}
-                      placeholder="Enter subtask title"
-                    />
-                    <TextArea
-                      label="Description (Optional)"
-                      value={subtaskDescription}
-                      onChange={(e) => setSubtaskDescription(e.target.value)}
-                      rows={2}
-                      placeholder="Enter subtask description"
-                    />
-                    <div className="flex space-x-3 justify-end">
-                      <Button
-                        onClick={() => setShowSubtaskForm(false)}
-                        variant="secondary"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleAddSubtask}
-                        disabled={!subtaskTitle.trim()}
-                        variant="primary"
-                      >
-                        Add Subtask
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {issue.subtasks.length > 0 ? (
-                <div className="space-y-3">
-                  {issue.subtasks.map((subtask) => (
-                    <div key={subtask._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-md">
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={subtask.status === 'resolved'}
-                          className="h-4 w-4 text-[#01a370] focus:ring-[#01a370] border-gray-300 rounded"
-                        />
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">{subtask.title}</h4>
-                          {subtask.description && (
-                            <p className="text-sm text-gray-500">{subtask.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {subtask.due_date && new Date(subtask.due_date).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">No subtasks yet.</p>
-              )}
-            </Card>
           </div>
 
           {/* Sidebar */}
@@ -366,37 +454,49 @@ const IssueDetails = () => {
             <Card title="Details">
               <div className="space-y-4">
                 {/* Status */}
-                <Select
-                  label="Status"
-                  value={issue.status}
-                  onChange={(e) => handleUpdateField('status', e.target.value)}
-                  options={statusOptions}
-                />
+                <div className="group transition-all">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <Select
+                    value={issue.status}
+                    onChange={(e) => handleUpdateField('status', e.target.value)}
+                    options={statusOptions}
+                    containerClassName="relative"
+                    className="appearance-none !pr-3 bg-white cursor-pointer hover:border-[#01a370] transition-colors"
+                  />
+                </div>
 
                 {/* Assignee */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assignee</label>
-                  <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md">
+                  <div className="flex items-center space-x-2 p-2 bg-gray-50 border border-gray-200 rounded-md">
                     <UserAvatar user={issue.assignee_id} size="small" />
                     <span className="text-sm text-gray-900">{issue.assignee_id?.name || 'Unassigned'}</span>
                   </div>
                 </div>
 
                 {/* Priority */}
-                <Select
-                  label="Priority"
-                  value={issue.priority}
-                  onChange={(e) => handleUpdateField('priority', e.target.value)}
-                  options={priorityOptions}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-900 capitalize">
+                    {issue.priority}
+                  </div>
+                </div>
 
                 {/* Type */}
-                <Select
-                  label="Type"
-                  value={issue.issue_type}
-                  onChange={(e) => handleUpdateField('issue_type', e.target.value)}
-                  options={typeOptions}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-900 capitalize">
+                    {issue.issue_type}
+                  </div>
+                </div>
+
+                {/* Sprint */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sprint</label>
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-900">
+                    {issue.sprint_id?.name || 'No Sprint'}
+                  </div>
+                </div>
 
                 {/* Due Date */}
                 <div>
@@ -491,6 +591,91 @@ const IssueDetails = () => {
           </div>
         </div>
       </main>
+
+      {/* Subtask Modal */}
+      <Modal
+        isOpen={isSubtaskModalOpen}
+        onClose={() => setIsSubtaskModalOpen(false)}
+        title={selectedSubtask ? "Edit Subtask" : "Add New Subtask"}
+      >
+        <div className="space-y-4">
+          <Input
+            label="Title"
+            value={subtaskFormData.title}
+            onChange={(e) => setSubtaskFormData({ ...subtaskFormData, title: e.target.value })}
+            placeholder="Subtask title"
+            required
+          />
+          <TextArea
+            label="Description"
+            value={subtaskFormData.description}
+            onChange={(e) => setSubtaskFormData({ ...subtaskFormData, description: e.target.value })}
+            placeholder="Optional details..."
+            rows={3}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Select
+              label="Status"
+              value={subtaskFormData.status}
+              onChange={(e) => setSubtaskFormData({ ...subtaskFormData, status: e.target.value })}
+              options={statusOptions}
+            />
+            <UserSelect
+              label="Assignee"
+              companyMembers={companyUsers}
+              value={subtaskFormData.assignee_id}
+              onChange={(val) => setSubtaskFormData({ ...subtaskFormData, assignee_id: val })}
+              icon={User}
+              helperText="Select who will work on this subtask"
+            />
+          </div>
+          <Input
+            label="Due Date"
+            type="date"
+            value={subtaskFormData.due_date}
+            onChange={(e) => setSubtaskFormData({ ...subtaskFormData, due_date: e.target.value })}
+          />
+
+          <div className="flex space-x-3 pt-4 border-t border-gray-100 mt-6">
+            <Button
+              variant="secondary"
+              onClick={() => setIsSubtaskModalOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSaveSubtask}
+              className="flex-1"
+            >
+              {selectedSubtask ? "Update Subtask" : "Add Subtask"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteSubtaskModalOpen}
+        onClose={() => setIsDeleteSubtaskModalOpen(false)}
+        title="Delete Subtask"
+      >
+        <div className="py-4">
+          <div className="flex items-center space-x-3 text-red-600 mb-4">
+            <AlertCircle className="h-6 w-6" />
+            <span className="font-bold">Warning</span>
+          </div>
+          <p className="text-gray-600">
+            Are you sure you want to delete subtask <strong>"{subtaskToDelete?.title}"</strong>?
+            This action cannot be undone.
+          </p>
+          <div className="flex justify-end space-x-3 mt-8">
+            <Button variant="secondary" onClick={() => setIsDeleteSubtaskModalOpen(false)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDeleteSubtask}>Delete</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

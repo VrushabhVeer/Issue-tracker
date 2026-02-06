@@ -67,6 +67,24 @@ const IssueApis = {
       console.error('addSubtask error:', error);
       throw error.response?.data || error;
     }
+  },
+  getBoardData: async (projectId) => {
+    try {
+      const response = await axiosInstance.get(`/issues/board/${projectId}`);
+      return response;
+    } catch (error) {
+      console.error('getBoardData error:', error);
+      throw error.response?.data || error;
+    }
+  },
+  getBacklog: async (projectId) => {
+    try {
+      const response = await axiosInstance.get(`/issues/backlog/${projectId}`);
+      return response;
+    } catch (error) {
+      console.error('getBacklog error:', error);
+      throw error.response?.data || error;
+    }
   }
 };
 

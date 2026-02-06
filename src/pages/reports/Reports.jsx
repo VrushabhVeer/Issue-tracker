@@ -115,7 +115,7 @@ const Reports = () => {
                         <span className="text-3xl font-bold text-gray-900">
                             {data.statusStats.reduce((acc, curr) => acc + curr.count, 0)}
                         </span>
-                        <span className="text-gray-500 text-sm font-medium">Total Issues</span>
+                        <span className="text-gray-500 text-sm font-medium"> Total Issues</span>
                     </Card>
 
                     <Card className="flex flex-col items-center justify-center p-6 bg-white border-l-4 border-yellow-500">
@@ -123,7 +123,7 @@ const Reports = () => {
                         <span className="text-3xl font-bold text-gray-900">
                             {data.statusStats.find(s => s._id === 'open')?.count || 0}
                         </span>
-                        <span className="text-gray-500 text-sm font-medium">Open Issues</span>
+                        <span className="text-gray-500 text-sm font-medium"> Open Issues</span>
                     </Card>
 
                     <Card className="flex flex-col items-center justify-center p-6 bg-white border-l-4 border-[#01a370]">
@@ -131,7 +131,7 @@ const Reports = () => {
                         <span className="text-3xl font-bold text-gray-900">
                             {data.statusStats.find(s => ['resolved', 'closed'].includes(s._id))?.count || 0}
                         </span>
-                        <span className="text-gray-500 text-sm font-medium">Resolved</span>
+                        <span className="text-gray-500 text-sm font-medium"> Resolved</span>
                     </Card>
 
                     <Card className="flex flex-col items-center justify-center p-6 bg-white border-l-4 border-red-500">
@@ -139,7 +139,7 @@ const Reports = () => {
                         <span className="text-3xl font-bold text-gray-900">
                             {data.priorityStats.find(p => ['critical', 'high'].includes(p._id))?.count || 0}
                         </span>
-                        <span className="text-gray-500 text-sm font-medium">High Priority</span>
+                        <span className="text-gray-500 text-sm font-medium"> High Priority</span>
                     </Card>
                 </div>
 

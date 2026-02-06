@@ -1,5 +1,5 @@
-// components/projects/ProjectList.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, MoreVertical, ChevronLeft, ChevronRight, Trash2, AlertTriangle } from 'lucide-react';
 import Card from '../../common/Card';
 import Button from '../../common/Button';
@@ -26,6 +26,7 @@ const getStatusVariant = (status) => {
 };
 
 const ProjectList = ({ companyId }) => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -400,6 +401,7 @@ const ProjectList = ({ companyId }) => {
 };
 
 const ProjectCard = ({ project, onEdit, onDelete, processing }) => {
+  const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
 
   const formatDate = (dateString) => {
@@ -492,6 +494,25 @@ const ProjectCard = ({ project, onEdit, onDelete, processing }) => {
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-500">Active Sprints:</span>
           <span className="font-medium">{project.active_sprint_count || 0}</span>
+        </div>
+
+        <div className="pt-4 flex space-x-2">
+          <Button
+            variant="outline"
+            size="small"
+            className="flex-1"
+            onClick={() => navigate(`/projects/${project._id}/board`)}
+          >
+            Board
+          </Button>
+          <Button
+            variant="outline"
+            size="small"
+            className="flex-1"
+            onClick={() => navigate(`/projects/${project._id}/backlog`)}
+          >
+            Backlog
+          </Button>
         </div>
       </div>
     </div>
