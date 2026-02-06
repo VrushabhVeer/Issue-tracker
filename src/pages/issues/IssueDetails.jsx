@@ -439,17 +439,28 @@ const IssueDetails = () => {
                       <div className="flex items-center space-x-3">
                         <Paperclip className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                          <a
+                            href={`http://localhost:4500/${attachment.file_path}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-gray-900 hover:text-[#01a370] truncate max-w-xs transition-colors"
+                          >
                             {attachment.file_name}
-                          </p>
+                          </a>
                           <p className="text-xs text-gray-500">
                             {formatFileSize(attachment.file_size)} • {new Date(attachment.uploaded_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
-                      <button className="text-gray-400 hover:text-gray-600">
+                      <a
+                        href={`http://localhost:4500/${attachment.file_path}`}
+                        download={attachment.file_name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-[#01a370] transition-colors"
+                      >
                         <Download className="h-4 w-4" />
-                      </button>
+                      </a>
                     </div>
                   ))}
                 </div>

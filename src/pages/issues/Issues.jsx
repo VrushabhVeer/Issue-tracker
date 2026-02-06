@@ -22,7 +22,7 @@ import Badge from '../../common/Badge';
 import UserAvatar from '../../common/UserAvatar';
 import EmptyState from '../../common/EmptyState';
 import Select from '../../common/Select';
-import IssueApis from "../../api/endpoints/issuesEndpoint";
+import { IssueApis, ProjectApis } from "../../api";
 
 const IssuesPage = () => {
   const [issues, setIssues] = useState([]);
@@ -32,6 +32,8 @@ const IssuesPage = () => {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [projects, setProjects] = useState([]);
   const [sortField, setSortField] = useState("updated_at");
   const [sortDirection, setSortDirection] = useState("desc");
   const [showFilters, setShowFilters] = useState(false);
@@ -58,6 +60,7 @@ const IssuesPage = () => {
         status: statusFilter !== 'all' ? statusFilter : undefined,
         priority: priorityFilter !== 'all' ? priorityFilter : undefined,
         issue_type: typeFilter !== 'all' ? typeFilter : undefined,
+        project_id: projectFilter !== 'all' ? projectFilter : undefined,
         ...filters
       };
 
@@ -89,8 +92,20 @@ const IssuesPage = () => {
 
   // Initial load and when filters change
   useEffect(() => {
-    fetchIssues(1);
-  }, [searchTerm, statusFilter, priorityFilter, typeFilter]);
+    const fetchInitialData = async () => {
+      try {
+        const projectRes = await ProjectApis.getProjectNames();
+        if (projectRes.success) {
+          setProjects(projectRes.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch projects:", err);
+      }
+      fetchIssues(1);
+    };
+
+    fetchInitialData();
+  }, [searchTerm, statusFilter, priorityFilter, typeFilter, projectFilter]);
 
   const handlePageChange = (newPage) => {
     fetchIssues(newPage);
@@ -201,9 +216,9 @@ const IssuesPage = () => {
                 disabled={processing}
               >
                 Filters
-                {(statusFilter !== "all" || priorityFilter !== "all" || typeFilter !== "all") && (
+                {(statusFilter !== "all" || priorityFilter !== "all" || typeFilter !== "all" || projectFilter !== "all") && (
                   <span className="ml-2 bg-[#01a370] text-white text-xs px-2 py-0.5 rounded-full">
-                    {[statusFilter, priorityFilter, typeFilter].filter(f => f !== "all").length}
+                    {[statusFilter, priorityFilter, typeFilter, projectFilter].filter(f => f !== "all").length}
                   </span>
                 )}
               </Button>
@@ -212,7 +227,17 @@ const IssuesPage = () => {
 
           {/* Expanded Filters */}
           {showFilters && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+              <Select
+                label="Project"
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                disabled={processing}
+                options={[
+                  { value: "all", label: "All Projects" },
+                  ...projects.map(p => ({ value: p._id, label: p.name }))
+                ]}
+              />
               <Select
                 label="Status"
                 value={statusFilter}
@@ -350,16 +375,16 @@ const IssuesPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <UserAvatar user={issue.assignee} size="small" />
+                          <UserAvatar user={issue.assignee_id} size="small" />
                           <div className="ml-2 text-sm font-medium text-gray-900 truncate max-w-xs">
-                            {issue.assignee?.name || 'Unassigned'}
+                            {issue.assignee_id?.name || 'Unassigned'}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <UserAvatar user={issue.reporter} size="small" />
-                          <div className="ml-2 text-sm text-gray-900 truncate max-w-xs">{issue.reporter?.name}</div>
+                          <UserAvatar user={issue.reporter_id} size="small" />
+                          <div className="ml-2 text-sm text-gray-900 truncate max-w-xs">{issue.reporter_id?.name || 'Unknown'}</div>
                         </div>
                       </td>
                     </tr>

@@ -3,5 +3,7 @@ import AuthAPI from './endpoints/authEndpoints';
 import ProjectApis from './endpoints/projectEndpoints';
 import IssueApis from './endpoints/issuesEndpoint';
 import DashboardApis from './endpoints/dashboardEndpoint';
+import CompanyApis from './endpoints/companyEndpoints';
+import ReportApis from './endpoints/reportEndpoint';
 
-export { AuthAPI, ProjectApis, IssueApis, DashboardApis };
+export { AuthAPI, ProjectApis, IssueApis, DashboardApis, CompanyApis, ReportApis };

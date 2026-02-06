@@ -136,7 +136,7 @@ const CreateIssue = ({ companyId }) => {
     try {
       setLoadingProjects(true);
       const response = await ProjectApis.getProjectNames();
-      setProjects(response || []);
+      setProjects(response.data || []);
     } catch (error) {
       console.error('Error fetching projects list:', error);
       toast.error(error.message?.error_message ||
@@ -267,10 +267,12 @@ const CreateIssue = ({ companyId }) => {
       toast.success("Subtask updated successfully");
     } else {
       // Add new subtask
+      const storedUser = JSON.parse(localStorage.getItem('user'));
       setSubtasks((prev) => [
         ...prev,
         {
           ...newSubtask,
+          reporter_id: storedUser?._id || null,
           id: Date.now().toString(),
         },
       ]);

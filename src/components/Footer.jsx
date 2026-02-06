@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const isAuthenticated = !!localStorage.getItem('token');
 
   return (
     <footer className="bg-gray-50 border-t border-gray-200 mt-auto">
@@ -9,13 +10,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company info */}
           <div className="col-span-1 md:col-span-2">
-            <Link to="/dashboard" className="flex items-center mb-4">
+            <Link to={isAuthenticated ? "/dashboard" : "/login"} className="flex items-center mb-4">
               <span className="font-bebasNeue text-2xl text-[#01a370] tracking-wide">
                 IssueTracker
               </span>
             </Link>
             <p className="text-gray-600 text-sm max-w-md mb-4">
-              A comprehensive issue tracking and project management solution for software development teams. 
+              A comprehensive issue tracking and project management solution for software development teams.
               Streamline your workflow, enhance collaboration, and deliver projects successfully.
             </p>
             <div className="flex space-x-4">

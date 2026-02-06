@@ -107,6 +107,7 @@ const Dashboard = () => {
   };
 
   const getDeadlineBadge = (date) => {
+    if (!date) return <Badge variant="default">No date</Badge>;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const deadline = new Date(date);
@@ -269,8 +270,8 @@ const Dashboard = () => {
                       ></div>
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-xs text-gray-500">{project.completed}/{project.issues} tasks completed</span>
-                      <span className="text-xs text-gray-500">{project.issues - project.completed} remaining</span>
+                      <span className="text-xs text-gray-500">{project.completed}/{project.total} tasks completed</span>
+                      <span className="text-xs text-gray-500">{project.total - project.completed} remaining</span>
                     </div>
                   </div>
                 ))}
